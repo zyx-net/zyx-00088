@@ -38,6 +38,7 @@ EXIT_CODES = {
     4: "重复文件名（源目录或清单中存在重复）",
     5: "缺片（清单中存在但源目录中缺失的文件）",
     6: "没有可撤销的操作",
+    7: "合并冲突（多清单导入存在冲突，需要人工解决）",
 }
 
 
@@ -49,11 +50,12 @@ def cli(ctx, config: str):
 
     非零退出码说明:
       1 - 通用错误
-      2 - 清单损坏或重复文件名
+      2 - 清单错误
       3 - 哈希不一致
       4 - 存在重复文件名
       5 - 存在缺片
       6 - 没有可撤销的操作
+      7 - 合并冲突
     """
     ctx.ensure_object(dict)
     cfg = _get_config(config)
@@ -110,21 +112,37 @@ def scan(ctx, source_dir: str, batch_id: Optional[str], batch_name: Optional[str
 @click.option("--batch-id", help="批次ID")
 @click.option("--batch-name", help="新批次名称")
 @click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.option("--merge/--no-merge", default=True, help="是否合并到现有清单")
 @click.pass_context
-def import_list(ctx, manifest_path: str, batch_id: Optional[str], batch_name: Optional[str], output_json: bool):
+def import_list(ctx, manifest_path: str, batch_id: Optional[str], batch_name: Optional[str], output_json: bool, merge: bool):
     """导入交付清单 (CSV 格式)"""
     config = ctx.obj["config"]
     storage = ctx.obj["storage"]
 
     try:
-        result = import_delivery_list(config, storage, manifest_path, batch_id, batch_name)
+        result = import_delivery_list(config, storage, manifest_path, batch_id, batch_name, merge)
+        conflict_count = result.get("conflict_count", 0)
+
         if output_json:
             _print_json(result)
         else:
-            click.echo(f"[OK] 导入完成")
-            click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
-            click.echo(f"  清单文件: {result['source_file']}")
-            click.echo(f"  导入条目: {result['imported_count']} 个")
+            if conflict_count > 0:
+                click.echo(f"[WARN] 导入完成但存在冲突")
+                click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
+                click.echo(f"  清单文件: {result['source_file']}")
+                click.echo(f"  导入条目: {result['imported_count']} 个")
+                click.echo(f"  冲突数量: {conflict_count} 个")
+                click.echo("\n冲突列表:")
+                for c in result.get("conflicts", []):
+                    click.echo(f"  - [{c['conflict_type']}] {c['message']}")
+            else:
+                click.echo(f"[OK] 导入完成")
+                click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
+                click.echo(f"  清单文件: {result['source_file']}")
+                click.echo(f"  导入条目: {result['imported_count']} 个")
+
+        if conflict_count > 0:
+            sys.exit(7)
         sys.exit(0)
     except ValueError as e:
         if "重复文件名" in str(e) or "损坏" in str(e):
@@ -198,6 +216,15 @@ def plan(ctx, batch_id: Optional[str], output_json: bool):
     storage = ctx.obj["storage"]
 
     try:
+        batch, _ = get_or_create_batch(storage, batch_id)
+        unresolved_conflicts = [c for c in batch.conflicts if not c.resolved]
+        if unresolved_conflicts:
+            click.echo(f"[FAIL] 存在 {len(unresolved_conflicts)} 个未解决的冲突，请先解决冲突后再执行此操作", err=True)
+            click.echo("冲突列表:", err=True)
+            for c in unresolved_conflicts:
+                click.echo(f"  - [{c.conflict_type.value}] {c.message}", err=True)
+            sys.exit(7)
+
         result = generate_correction_plan(config, storage, batch_id)
         if output_json:
             _print_json(result)
@@ -212,6 +239,8 @@ def plan(ctx, batch_id: Optional[str], output_json: bool):
                     click.echo(f"     源: {corr['source']}")
                 click.echo(f"     目标: {corr['target']}")
         sys.exit(0)
+    except SystemExit:
+        raise
     except Exception as e:
         click.echo(f"[FAIL] 生成计划失败: {e}", err=True)
         sys.exit(1)
@@ -229,6 +258,15 @@ def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Opt
     storage = ctx.obj["storage"]
 
     try:
+        batch, _ = get_or_create_batch(storage, batch_id)
+        unresolved_conflicts = [c for c in batch.conflicts if not c.resolved]
+        if unresolved_conflicts:
+            click.echo(f"[FAIL] 存在 {len(unresolved_conflicts)} 个未解决的冲突，请先解决冲突后再执行此操作", err=True)
+            click.echo("冲突列表:", err=True)
+            for c in unresolved_conflicts:
+                click.echo(f"  - [{c.conflict_type.value}] {c.message}", err=True)
+            sys.exit(7)
+
         result = apply_corrections(config, storage, batch_id, correction_id, limit)
         if output_json:
             _print_json(result)
@@ -252,6 +290,8 @@ def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Opt
         if result["failed_count"] > 0:
             sys.exit(1)
         sys.exit(0)
+    except SystemExit:
+        raise
     except Exception as e:
         click.echo(f"[FAIL] 应用失败: {e}", err=True)
         sys.exit(1)
@@ -269,6 +309,15 @@ def undo(ctx, batch_id: Optional[str], correction_id: Optional[str], output_json
 
     try:
         batch, _ = get_or_create_batch(storage, batch_id)
+
+        unresolved_conflicts = [c for c in batch.conflicts if not c.resolved]
+        if unresolved_conflicts:
+            click.echo(f"[FAIL] 存在 {len(unresolved_conflicts)} 个未解决的冲突，请先解决冲突后再执行此操作", err=True)
+            click.echo("冲突列表:", err=True)
+            for c in unresolved_conflicts:
+                click.echo(f"  - [{c.conflict_type.value}] {c.message}", err=True)
+            sys.exit(7)
+
         if not has_undoable_operations(batch):
             click.echo("[FAIL] 没有可撤销的操作", err=True)
             sys.exit(6)
@@ -284,6 +333,8 @@ def undo(ctx, batch_id: Optional[str], correction_id: Optional[str], output_json
             for corr in result["undone"]:
                 click.echo(f"  [UNDO] [{corr['type']}] {corr['target']}")
         sys.exit(0)
+    except SystemExit:
+        raise
     except ValueError as e:
         if "没有可撤销的操作" in str(e):
             click.echo(f"[FAIL] {e}", err=True)
@@ -319,7 +370,14 @@ def report(ctx, batch_id: Optional[str], output: Optional[str], fmt: str, output
             click.echo(f"  交付项: {summary['total_delivery_items']}")
             click.echo(f"  正常: {summary['ok_count']}, 缺片: {summary['missing_count']}, 重复: {summary['duplicate_count']}, 哈希不一致: {summary['hash_mismatch_count']}")
             click.echo(f"  已执行修正: {summary['active_corrections_count']} 个")
+            if summary.get("unresolved_conflicts_count", 0) > 0:
+                click.echo(f"  未解决冲突: {summary['unresolved_conflicts_count']} 个")
+                click.echo("\n冲突列表:")
+                for c in result.get("unresolved_conflicts", []):
+                    click.echo(f"  - [{c['conflict_type']}] {c['message']}")
 
+        if summary.get("unresolved_conflicts_count", 0) > 0:
+            sys.exit(7)
         if summary["hash_mismatch_count"] > 0:
             sys.exit(3)
         if summary["duplicate_count"] > 0:

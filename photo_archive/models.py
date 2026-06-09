@@ -2,9 +2,21 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 import json
 import uuid
+
+
+class ConflictType(str, Enum):
+    TARGET_NAME_CONFLICT = "target_name_conflict"
+    SOURCE_FILE_CONFLICT = "source_file_conflict"
+    BATCH_NAME_CONFLICT = "batch_name_conflict"
+
+
+class MergeStatus(str, Enum):
+    PENDING = "pending"
+    CONFLICT = "conflict"
+    OK = "ok"
 
 
 class CorrectionType(str, Enum):
@@ -133,6 +145,77 @@ class CorrectionAction:
 
 
 @dataclass
+class ImportRecord:
+    import_id: str
+    source_file: str
+    imported_at: datetime
+    imported_count: int
+    batch_name: str
+    items: List[Dict] = field(default_factory=list)
+
+    def to_dict(self) -> Dict:
+        return {
+            "import_id": self.import_id,
+            "source_file": self.source_file,
+            "imported_at": self.imported_at.isoformat(),
+            "imported_count": self.imported_count,
+            "batch_name": self.batch_name,
+            "items": self.items,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "ImportRecord":
+        return cls(
+            import_id=data["import_id"],
+            source_file=data["source_file"],
+            imported_at=datetime.fromisoformat(data["imported_at"]),
+            imported_count=data["imported_count"],
+            batch_name=data["batch_name"],
+            items=data.get("items", []),
+        )
+
+
+@dataclass
+class Conflict:
+    conflict_id: str
+    conflict_type: ConflictType
+    target_name: Optional[str] = None
+    source_file: Optional[str] = None
+    batch_name: Optional[str] = None
+    message: str = ""
+    details: Dict = field(default_factory=dict)
+    resolved: bool = False
+    resolved_at: Optional[datetime] = None
+
+    def to_dict(self) -> Dict:
+        return {
+            "conflict_id": self.conflict_id,
+            "conflict_type": self.conflict_type.value,
+            "target_name": self.target_name,
+            "source_file": self.source_file,
+            "batch_name": self.batch_name,
+            "message": self.message,
+            "details": self.details,
+            "resolved": self.resolved,
+            "resolved_at": self.resolved_at.isoformat() if self.resolved_at else None,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "Conflict":
+        return cls(
+            conflict_id=data["conflict_id"],
+            conflict_type=ConflictType(data["conflict_type"]),
+            target_name=data.get("target_name"),
+            source_file=data.get("source_file"),
+            batch_name=data.get("batch_name"),
+            message=data.get("message", ""),
+            details=data.get("details", {}),
+            resolved=data.get("resolved", False),
+            resolved_at=datetime.fromisoformat(data["resolved_at"]) if data.get("resolved_at") else None,
+        )
+
+
+@dataclass
 class BatchHistory:
     batch_id: str
     name: str
@@ -141,10 +224,22 @@ class BatchHistory:
     scanned_files: Dict[str, ScannedFile] = field(default_factory=dict)
     delivery_list: Dict[str, DeliveryItem] = field(default_factory=dict)
     corrections: List[CorrectionAction] = field(default_factory=list)
+    import_records: List[ImportRecord] = field(default_factory=list)
+    conflicts: List[Conflict] = field(default_factory=list)
+    merge_status: MergeStatus = MergeStatus.PENDING
     scan_source_dir: Optional[str] = None
     last_scan_at: Optional[datetime] = None
     last_import_at: Optional[datetime] = None
     last_verify_at: Optional[datetime] = None
+    normalized_name: str = ""
+
+    def __post_init__(self):
+        if not self.normalized_name:
+            self.normalized_name = self._normalize_name(self.name)
+
+    @staticmethod
+    def _normalize_name(name: str) -> str:
+        return " ".join(name.strip().lower().split())
 
     def to_dict(self) -> Dict:
         return {
@@ -155,10 +250,14 @@ class BatchHistory:
             "scanned_files": {k: v.to_dict() for k, v in self.scanned_files.items()},
             "delivery_list": {k: v.to_dict() for k, v in self.delivery_list.items()},
             "corrections": [c.to_dict() for c in self.corrections],
+            "import_records": [r.to_dict() for r in self.import_records],
+            "conflicts": [c.to_dict() for c in self.conflicts],
+            "merge_status": self.merge_status.value,
             "scan_source_dir": self.scan_source_dir,
             "last_scan_at": self.last_scan_at.isoformat() if self.last_scan_at else None,
             "last_import_at": self.last_import_at.isoformat() if self.last_import_at else None,
             "last_verify_at": self.last_verify_at.isoformat() if self.last_verify_at else None,
+            "normalized_name": self.normalized_name,
         }
 
     @classmethod
@@ -171,8 +270,12 @@ class BatchHistory:
             scanned_files={k: ScannedFile.from_dict(v) for k, v in data.get("scanned_files", {}).items()},
             delivery_list={k: DeliveryItem.from_dict(v) for k, v in data.get("delivery_list", {}).items()},
             corrections=[CorrectionAction.from_dict(c) for c in data.get("corrections", [])],
+            import_records=[ImportRecord.from_dict(r) for r in data.get("import_records", [])],
+            conflicts=[Conflict.from_dict(c) for c in data.get("conflicts", [])],
+            merge_status=MergeStatus(data.get("merge_status", MergeStatus.PENDING.value)),
             scan_source_dir=data.get("scan_source_dir"),
             last_scan_at=datetime.fromisoformat(data["last_scan_at"]) if data.get("last_scan_at") else None,
             last_import_at=datetime.fromisoformat(data["last_import_at"]) if data.get("last_import_at") else None,
             last_verify_at=datetime.fromisoformat(data["last_verify_at"]) if data.get("last_verify_at") else None,
+            normalized_name=data.get("normalized_name", ""),
         )

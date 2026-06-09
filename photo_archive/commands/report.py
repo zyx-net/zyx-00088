@@ -38,6 +38,9 @@ def _build_report_data(batch: BatchHistory, config: Config) -> Dict:
     duplicate_files: List[Dict] = []
     hash_changes: List[Dict] = []
     applied_corrections: List[Dict] = []
+    import_records: List[Dict] = []
+    conflicts: List[Dict] = []
+    unresolved_conflicts: List[Dict] = []
 
     for target_name, item in batch.delivery_list.items():
         entry = {
@@ -74,17 +77,47 @@ def _build_report_data(batch: BatchHistory, config: Config) -> Dict:
     undone_corrections = [c for c in applied_corrections if c["rolled_back"]]
     active_corrections = [c for c in applied_corrections if not c["rolled_back"]]
 
+    for record in batch.import_records:
+        import_records.append({
+            "import_id": record.import_id,
+            "source_file": record.source_file,
+            "imported_at": record.imported_at.isoformat(),
+            "imported_count": record.imported_count,
+            "batch_name": record.batch_name,
+        })
+
+    for conflict in batch.conflicts:
+        conflict_dict = {
+            "conflict_id": conflict.conflict_id,
+            "conflict_type": conflict.conflict_type.value,
+            "target_name": conflict.target_name,
+            "source_file": conflict.source_file,
+            "batch_name": conflict.batch_name,
+            "message": conflict.message,
+            "details": conflict.details,
+            "resolved": conflict.resolved,
+            "resolved_at": conflict.resolved_at.isoformat() if conflict.resolved_at else "",
+        }
+        conflicts.append(conflict_dict)
+        if not conflict.resolved:
+            unresolved_conflicts.append(conflict_dict)
+
     summary = {
         "batch_id": batch.batch_id,
         "batch_name": batch.name,
+        "normalized_name": batch.normalized_name,
         "created_at": batch.created_at.isoformat(),
         "updated_at": batch.updated_at.isoformat(),
+        "merge_status": batch.merge_status.value,
         "total_delivery_items": len(batch.delivery_list),
         "total_scanned_files": len(batch.scanned_files),
         "ok_count": sum(1 for i in batch.delivery_list.values() if i.status == FileStatus.OK),
         "missing_count": len(missing_files),
         "duplicate_count": len(duplicate_files),
         "hash_mismatch_count": len(hash_changes),
+        "total_conflicts": len(conflicts),
+        "unresolved_conflicts_count": len(unresolved_conflicts),
+        "total_imports": len(import_records),
         "total_applied_corrections": len(applied_corrections),
         "active_corrections_count": len(active_corrections),
         "undone_corrections_count": len(undone_corrections),
@@ -101,6 +134,9 @@ def _build_report_data(batch: BatchHistory, config: Config) -> Dict:
         "hash_changes": hash_changes,
         "applied_corrections": active_corrections,
         "undone_corrections": undone_corrections,
+        "import_records": import_records,
+        "conflicts": conflicts,
+        "unresolved_conflicts": unresolved_conflicts,
     }
 
 
@@ -118,6 +154,34 @@ def _write_csv_report(path: Path, data: Dict) -> None:
         for key, value in summary.items():
             writer.writerow([key, value])
         writer.writerow([])
+
+        if data.get("import_records"):
+            writer.writerow(["=== 导入记录 ==="])
+            writer.writerow(["导入ID", "源文件", "导入时间", "导入数量", "批次名"])
+            for item in data["import_records"]:
+                writer.writerow([
+                    item["import_id"],
+                    item["source_file"],
+                    item["imported_at"],
+                    item["imported_count"],
+                    item["batch_name"],
+                ])
+            writer.writerow([])
+
+        if data.get("conflicts"):
+            writer.writerow(["=== 冲突列表 ==="])
+            writer.writerow(["冲突ID", "冲突类型", "目标文件名", "源文件", "批次名", "是否已解决", "消息"])
+            for item in data["conflicts"]:
+                writer.writerow([
+                    item["conflict_id"],
+                    item["conflict_type"],
+                    item.get("target_name", ""),
+                    item.get("source_file", ""),
+                    item.get("batch_name", ""),
+                    item["resolved"],
+                    item["message"],
+                ])
+            writer.writerow([])
 
         writer.writerow(["=== 文件映射 ==="])
         writer.writerow(["目标文件名", "原路径", "状态", "期望哈希", "实际哈希", "期望机位", "序号"])
@@ -163,6 +227,20 @@ def _write_csv_report(path: Path, data: Dict) -> None:
             writer.writerow(["=== 实际执行的修正 ==="])
             writer.writerow(["ID", "类型", "源", "目标", "原因", "执行时间"])
             for item in data["applied_corrections"]:
+                writer.writerow([
+                    item["id"],
+                    item["type"],
+                    item["source"],
+                    item["target"],
+                    item["reason"],
+                    item["applied_at"],
+                ])
+            writer.writerow([])
+
+        if data.get("undone_corrections"):
+            writer.writerow(["=== 已撤销的修正 ==="])
+            writer.writerow(["ID", "类型", "源", "目标", "原因", "执行时间"])
+            for item in data["undone_corrections"]:
                 writer.writerow([
                     item["id"],
                     item["type"],

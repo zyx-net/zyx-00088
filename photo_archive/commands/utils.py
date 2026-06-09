@@ -13,11 +13,17 @@ def get_or_create_batch(
     if batch_id:
         batch = storage.load(batch_id)
         if batch:
+            if batch_name and batch.name != batch_name:
+                batch.name = batch_name
+                batch.normalized_name = BatchHistory._normalize_name(batch_name)
             return batch, False
         raise ValueError(f"批次不存在: {batch_id}")
 
     batch = storage.get_latest_batch()
     if batch:
+        if batch_name and batch.name != batch_name:
+            batch.name = batch_name
+            batch.normalized_name = BatchHistory._normalize_name(batch_name)
         return batch, False
 
     new_id = str(uuid.uuid4())[:8]
