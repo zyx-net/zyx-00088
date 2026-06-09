@@ -1,0 +1,6 @@
+﻿naming_rule: "{camera}_{batch}_{sequence:04d}.{extension}"
+cameras:
+  - A
+hash_strategy: sha256
+archive_dir: ./archive
+work_dir: ./work

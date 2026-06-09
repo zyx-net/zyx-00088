@@ -20,6 +20,30 @@ from ..storage import BatchStorage
 from .utils import get_or_create_batch
 
 
+def _find_conflicts_for_correction(
+    batch: BatchHistory,
+    correction: CorrectionAction,
+) -> List[Conflict]:
+    target_path = Path(correction.target)
+    return [
+        c for c in batch.conflicts
+        if not c.resolved
+        and (
+            (c.target_name == target_path.name and c.source_file == correction.source)
+            or c.source_file == correction.source
+        )
+    ]
+
+
+def _resolve_conflicts_for_correction(
+    batch: BatchHistory,
+    correction: CorrectionAction,
+) -> None:
+    for conflict in _find_conflicts_for_correction(batch, correction):
+        conflict.resolved = True
+        conflict.resolved_at = datetime.now()
+
+
 def _check_target_conflict(
     correction: CorrectionAction,
     scanner: FileScanner,
@@ -190,17 +214,24 @@ def apply_corrections(
                     })
                     conflicted_ids.append(correction.id)
 
-                    batch_conflict = Conflict(
-                        conflict_id=str(uuid.uuid4())[:8],
-                        conflict_type=ConflictType(conflict["conflict_type"]),
-                        target_name=Path(correction.target).name,
-                        source_file=correction.source,
-                        batch_name=batch.name,
-                        message=conflict["message"],
-                        details=conflict["details"],
-                        resolved=False,
-                    )
-                    batch.conflicts.append(batch_conflict)
+                    existing_conflicts = _find_conflicts_for_correction(batch, correction)
+                    if existing_conflicts:
+                        for ec in existing_conflicts:
+                            ec.conflict_type = ConflictType(conflict["conflict_type"])
+                            ec.message = conflict["message"]
+                            ec.details = conflict["details"]
+                    else:
+                        batch_conflict = Conflict(
+                            conflict_id=str(uuid.uuid4())[:8],
+                            conflict_type=ConflictType(conflict["conflict_type"]),
+                            target_name=Path(correction.target).name,
+                            source_file=correction.source,
+                            batch_name=batch.name,
+                            message=conflict["message"],
+                            details=conflict["details"],
+                            resolved=False,
+                        )
+                        batch.conflicts.append(batch_conflict)
                     continue
 
                 if correction.type == CorrectionType.COPY:
@@ -224,6 +255,7 @@ def apply_corrections(
             correction.status = CorrectionStatus.COMPLETED
             correction.failure_reason = None
             correction.conflict_details = None
+            _resolve_conflicts_for_correction(batch, correction)
             applied.append(correction)
             applied_ids.append(correction.id)
 

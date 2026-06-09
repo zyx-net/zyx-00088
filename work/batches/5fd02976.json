@@ -1,0 +1,175 @@
+{
+  "batch_id": "5fd02976",
+  "name": "review-conflict-owned",
+  "created_at": "2026-06-09T18:03:48.066722",
+  "updated_at": "2026-06-09T18:03:52.326443",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\conflict\\source_cards\\card_A\\IMG_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\conflict\\source_cards\\card_A\\IMG_0001.jpg",
+      "file_name": "IMG_0001.jpg",
+      "size": 17,
+      "hash": "3314793103078dc6d65b92165ee2103d20954cc49c41e91b11e5277c41dfd5c4",
+      "extension": "jpg",
+      "camera": null,
+      "detected_batch": "IMG"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\conflict\\source_cards\\card_A\\IMG_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\conflict\\source_cards\\card_A\\IMG_0002.jpg",
+      "file_name": "IMG_0002.jpg",
+      "size": 17,
+      "hash": "e6004208a4e0394355f59eedf0a966f5abe263e62c05ba41e79173cf5dbfa1c0",
+      "extension": "jpg",
+      "camera": null,
+      "detected_batch": "IMG"
+    }
+  },
+  "delivery_list": {
+    "A_REVIEWCON_0001.jpg": {
+      "target_name": "A_REVIEWCON_0001.jpg",
+      "expected_hash": "3314793103078dc6d65b92165ee2103d20954cc49c41e91b11e5277c41dfd5c4",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\conflict\\source_cards\\card_A\\IMG_0001.jpg",
+      "actual_hash": "3314793103078dc6d65b92165ee2103d20954cc49c41e91b11e5277c41dfd5c4"
+    },
+    "A_REVIEWCON_0002.jpg": {
+      "target_name": "A_REVIEWCON_0002.jpg",
+      "expected_hash": "e6004208a4e0394355f59eedf0a966f5abe263e62c05ba41e79173cf5dbfa1c0",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 2,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\conflict\\source_cards\\card_A\\IMG_0002.jpg",
+      "actual_hash": "e6004208a4e0394355f59eedf0a966f5abe263e62c05ba41e79173cf5dbfa1c0"
+    }
+  },
+  "corrections": [
+    {
+      "id": "6b48f9e0-74ea-4ca1-9be8-38e113a1e571",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\conflict\\source_cards\\card_A\\IMG_0001.jpg",
+      "target": "archive\\review-conflict-owned\\A_REVIEWCON_0001.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "status": "completed",
+      "applied": true,
+      "applied_at": "2026-06-09T18:03:52.325383",
+      "rolled_back": false,
+      "source_hash": "3314793103078dc6d65b92165ee2103d20954cc49c41e91b11e5277c41dfd5c4",
+      "expected_target_hash": "3314793103078dc6d65b92165ee2103d20954cc49c41e91b11e5277c41dfd5c4",
+      "actual_target_hash": "3314793103078dc6d65b92165ee2103d20954cc49c41e91b11e5277c41dfd5c4",
+      "failure_reason": null,
+      "conflict_details": null,
+      "completed_at": "2026-06-09T18:03:52.325397",
+      "plan_snapshot_id": "0cd05005"
+    },
+    {
+      "id": "f270d507-1c64-4bac-a43a-48b0913aabb9",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\conflict\\source_cards\\card_A\\IMG_0002.jpg",
+      "target": "archive\\review-conflict-owned\\A_REVIEWCON_0002.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "status": "completed",
+      "applied": true,
+      "applied_at": "2026-06-09T18:03:52.326381",
+      "rolled_back": false,
+      "source_hash": "e6004208a4e0394355f59eedf0a966f5abe263e62c05ba41e79173cf5dbfa1c0",
+      "expected_target_hash": "e6004208a4e0394355f59eedf0a966f5abe263e62c05ba41e79173cf5dbfa1c0",
+      "actual_target_hash": "e6004208a4e0394355f59eedf0a966f5abe263e62c05ba41e79173cf5dbfa1c0",
+      "failure_reason": null,
+      "conflict_details": null,
+      "completed_at": "2026-06-09T18:03:52.326382",
+      "plan_snapshot_id": "0cd05005"
+    }
+  ],
+  "import_records": [
+    {
+      "import_id": "4d8bcb4c",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\conflict\\delivery_list\\delivery_manifest.csv",
+      "imported_at": "2026-06-09T18:03:49.210397",
+      "imported_count": 2,
+      "batch_name": "review-conflict-owned",
+      "items": [
+        {
+          "target_name": "A_REVIEWCON_0001.jpg",
+          "expected_hash": "3314793103078dc6d65b92165ee2103d20954cc49c41e91b11e5277c41dfd5c4",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        },
+        {
+          "target_name": "A_REVIEWCON_0002.jpg",
+          "expected_hash": "e6004208a4e0394355f59eedf0a966f5abe263e62c05ba41e79173cf5dbfa1c0",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 2,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ],
+      "dry_run": false,
+      "conflict_summary": {
+        "target_name_conflicts": [],
+        "source_file_conflicts": [],
+        "batch_name_conflicts": []
+      },
+      "added_items": [
+        "A_REVIEWCON_0001.jpg",
+        "A_REVIEWCON_0002.jpg"
+      ],
+      "skipped_items": [],
+      "conflicted_items": [],
+      "overwritten_items": []
+    }
+  ],
+  "conflicts": [],
+  "apply_records": [
+    {
+      "apply_id": "a14d5f07",
+      "applied_at": "2026-06-09T18:03:52.326429",
+      "applied_count": 2,
+      "skipped_count": 0,
+      "failed_count": 0,
+      "remaining_count": 0,
+      "total_count": 2,
+      "applied_ids": [
+        "6b48f9e0-74ea-4ca1-9be8-38e113a1e571",
+        "f270d507-1c64-4bac-a43a-48b0913aabb9"
+      ],
+      "skipped_ids": [],
+      "failed_ids": [],
+      "limit": null,
+      "target_correction_id": null,
+      "hash_mismatch_count": 0
+    }
+  ],
+  "undo_records": [],
+  "plan_snapshots": [
+    {
+      "snapshot_id": "0cd05005",
+      "name": "review-conflict-snapshot",
+      "created_at": "2026-06-09T18:03:51.247470",
+      "correction_ids": [
+        "6b48f9e0-74ea-4ca1-9be8-38e113a1e571",
+        "f270d507-1c64-4bac-a43a-48b0913aabb9"
+      ],
+      "archive_dir": "archive\\review-conflict-owned",
+      "description": "reviewer-owned-conflict"
+    }
+  ],
+  "merge_status": "ok",
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\conflict\\source_cards\\card_A",
+  "last_scan_at": "2026-06-09T18:03:48.069649",
+  "last_import_at": "2026-06-09T18:03:49.210447",
+  "last_verify_at": "2026-06-09T18:03:50.217999",
+  "last_apply_at": "2026-06-09T18:03:52.326439",
+  "last_undo_at": null,
+  "last_plan_at": "2026-06-09T18:03:51.247449",
+  "active_snapshot_id": "0cd05005",
+  "normalized_name": "review-conflict-owned"
+}

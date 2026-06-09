@@ -1,0 +1,77 @@
+{
+  "batch_id": "abe3bf5b",
+  "name": "review-invalid-owned",
+  "created_at": "2026-06-09T18:02:51.107591",
+  "updated_at": "2026-06-09T18:02:52.225047",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\invalid\\source_cards\\card_A\\IMG_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\invalid\\source_cards\\card_A\\IMG_0001.jpg",
+      "file_name": "IMG_0001.jpg",
+      "size": 16,
+      "hash": "d34e451e0722e783223e294ac4f5780003ea04911e9c83ef7eae385b04f95169",
+      "extension": "jpg",
+      "camera": null,
+      "detected_batch": "IMG"
+    }
+  },
+  "delivery_list": {
+    "A_REVIEWBAD_0001.jpg": {
+      "target_name": "A_REVIEWBAD_0001.jpg",
+      "expected_hash": null,
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "unknown",
+      "matched_source": null,
+      "actual_hash": null
+    }
+  },
+  "corrections": [],
+  "import_records": [
+    {
+      "import_id": "b06d31fa",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\invalid\\delivery_list\\broken.csv",
+      "imported_at": "2026-06-09T18:02:52.225011",
+      "imported_count": 1,
+      "batch_name": "review-invalid-owned",
+      "items": [
+        {
+          "target_name": "A_REVIEWBAD_0001.jpg",
+          "expected_hash": null,
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ],
+      "dry_run": false,
+      "conflict_summary": {
+        "target_name_conflicts": [],
+        "source_file_conflicts": [],
+        "batch_name_conflicts": []
+      },
+      "added_items": [
+        "A_REVIEWBAD_0001.jpg"
+      ],
+      "skipped_items": [],
+      "conflicted_items": [],
+      "overwritten_items": []
+    }
+  ],
+  "conflicts": [],
+  "apply_records": [],
+  "undo_records": [],
+  "plan_snapshots": [],
+  "merge_status": "ok",
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a02_manual\\invalid\\source_cards\\card_A",
+  "last_scan_at": "2026-06-09T18:02:51.109531",
+  "last_import_at": "2026-06-09T18:02:52.225043",
+  "last_verify_at": null,
+  "last_apply_at": null,
+  "last_undo_at": null,
+  "last_plan_at": null,
+  "active_snapshot_id": null,
+  "normalized_name": "review-invalid-owned"
+}
