@@ -6,8 +6,8 @@ import sys
 import click
 
 from .config import Config
-from .storage import BatchStorage
-from .models import BatchNameConflictError
+from .storage import BatchStorage, ProfileStorage
+from .models import BatchNameConflictError, ProfileNameConflictError, Profile
 from .commands.init_sample import generate_sample_data
 from .commands.scan import scan_directory
 from .commands.import_list import import_delivery_list
@@ -18,6 +18,17 @@ from .commands.undo import undo_corrections, has_undoable_operations
 from .commands.report import generate_report
 from .commands.status import get_batch_status
 from .commands.utils import get_or_create_batch
+from .commands.profile import (
+    save_profile,
+    load_profile,
+    list_profiles,
+    delete_profile,
+    export_profile,
+    import_profile,
+    get_audit_log,
+    apply_profile_to_config,
+    merge_profile_with_cli_args,
+)
 
 
 def _get_config(config_path: str) -> Config:
@@ -28,8 +39,29 @@ def _get_storage(config: Config) -> BatchStorage:
     return BatchStorage(config.work_dir)
 
 
+def _get_profile_storage(config: Config) -> ProfileStorage:
+    return ProfileStorage(config.work_dir)
+
+
 def _print_json(data) -> None:
     click.echo(json.dumps(data, ensure_ascii=False, indent=2))
+
+
+def _load_and_apply_profile(ctx, profile_name: Optional[str]) -> Optional[Profile]:
+    if not profile_name:
+        return None
+    profile_storage = ctx.obj["profile_storage"]
+    profile = profile_storage.load(profile_name)
+    if not profile:
+        raise click.BadParameter(f"找不到 Profile: {profile_name}", param_hint="--profile")
+    config = ctx.obj["config"]
+    apply_profile_to_config(profile, config)
+    ctx.obj["config"] = config
+    return profile
+
+
+def _get_effective_args(profile: Optional[Profile], **cli_args) -> dict:
+    return merge_profile_with_cli_args(profile, cli_args)
 
 
 EXIT_CODES = {
@@ -43,6 +75,7 @@ EXIT_CODES = {
     7: "合并冲突（多清单导入存在冲突，需要人工解决）",
     8: "批次名冲突（归一化后与现有批次冲突，需要人工处理）",
     9: "执行冲突（目标文件被外部修改或内容不匹配）",
+    10: "Profile 名称冲突",
 }
 
 
@@ -61,11 +94,13 @@ def cli(ctx, config: str):
       6 - 没有可撤销的操作
       7 - 合并冲突
       8 - 批次名冲突
+      10 - Profile 名称冲突
     """
     ctx.ensure_object(dict)
     cfg = _get_config(config)
     ctx.obj["config"] = cfg
     ctx.obj["storage"] = _get_storage(cfg)
+    ctx.obj["profile_storage"] = _get_profile_storage(cfg)
 
 
 @cli.command("init-sample")
@@ -270,10 +305,15 @@ def verify(ctx, batch_id: Optional[str], check_hashes: bool, output_json: bool):
 @click.option("--batch-id", help="批次ID")
 @click.option("--save", "save_as", help="保存为命名批次快照，可用于后续断点续执行")
 @click.option("--description", help="批次快照描述")
-@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.option("--profile", help="使用保存的 Profile 配置")
+@click.option("--json/--no-json", "output_json", default=None, help="输出JSON格式")
 @click.pass_context
-def plan(ctx, batch_id: Optional[str], save_as: Optional[str], description: Optional[str], output_json: bool):
+def plan(ctx, batch_id: Optional[str], save_as: Optional[str], description: Optional[str], profile: Optional[str], output_json: Optional[bool]):
     """生成修正计划，支持保存为命名批次快照"""
+    profile_obj = _load_and_apply_profile(ctx, profile)
+    effective_args = _get_effective_args(profile_obj, output_json=output_json)
+    effective_output_json = effective_args["output_json"]
+
     config = ctx.obj["config"]
     storage = ctx.obj["storage"]
 
@@ -288,10 +328,12 @@ def plan(ctx, batch_id: Optional[str], save_as: Optional[str], description: Opti
             sys.exit(7)
 
         result = generate_correction_plan(config, storage, batch_id, save_as, description)
-        if output_json:
+        if effective_output_json:
             _print_json(result)
         else:
             click.echo(f"[OK] 修正计划已生成")
+            if profile:
+                click.echo(f"  使用 Profile: {profile}")
             click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
             click.echo(f"  归档目录: {result['archive_dir']}")
             click.echo(f"  总修正项: {result['correction_count']} 个")
@@ -343,30 +385,46 @@ def plan(ctx, batch_id: Optional[str], save_as: Optional[str], description: Opti
 @click.option("--correction-id", help="指定要应用的单个修正ID")
 @click.option("--limit", type=int, help="限制应用的修正数量")
 @click.option("--from-snapshot", help="从指定的快照继续执行")
-@click.option("--resume/--no-resume", default=True, help="是否跳过已完成的项继续执行（默认跳过）")
+@click.option("--resume/--no-resume", default=None, help="是否跳过已完成的项继续执行（默认跳过）")
 @click.option("--skip-conflicts", is_flag=True, help="跳过存在冲突的项，继续执行其他项")
-@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.option("--profile", help="使用保存的 Profile 配置")
+@click.option("--json/--no-json", "output_json", default=None, help="输出JSON格式")
 @click.pass_context
-def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Optional[int], from_snapshot: Optional[str], resume: bool, skip_conflicts: bool, output_json: bool):
+def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Optional[int], from_snapshot: Optional[str], resume: Optional[bool], skip_conflicts: bool, profile: Optional[str], output_json: Optional[bool]):
     """应用修正计划，支持从快照断点续执行"""
+    profile_obj = _load_and_apply_profile(ctx, profile)
+    effective_args = _get_effective_args(
+        profile_obj,
+        resume=resume,
+        skip_conflicts=skip_conflicts,
+        limit=limit,
+        output_json=output_json
+    )
+    effective_resume = effective_args["resume"]
+    effective_skip_conflicts = effective_args["skip_conflicts"]
+    effective_limit = effective_args["limit"]
+    effective_output_json = effective_args["output_json"]
+
     config = ctx.obj["config"]
     storage = ctx.obj["storage"]
 
     try:
         batch, _ = get_or_create_batch(storage, batch_id)
         unresolved_conflicts = [c for c in batch.conflicts if not c.resolved]
-        if unresolved_conflicts and not skip_conflicts:
+        if unresolved_conflicts and not effective_skip_conflicts:
             click.echo(f"[FAIL] 存在 {len(unresolved_conflicts)} 个未解决的冲突，请先解决冲突后再执行此操作，或使用 --skip-conflicts 跳过", err=True)
             click.echo("冲突列表:", err=True)
             for c in unresolved_conflicts:
                 click.echo(f"  - [{c.conflict_type.value}] {c.message}", err=True)
             sys.exit(7)
 
-        result = apply_corrections(config, storage, batch_id, correction_id, limit, from_snapshot, resume, skip_conflicts)
-        if output_json:
+        result = apply_corrections(config, storage, batch_id, correction_id, effective_limit, from_snapshot, effective_resume, effective_skip_conflicts)
+        if effective_output_json:
             _print_json(result)
         else:
             click.echo(f"[OK] 修正应用完成")
+            if profile:
+                click.echo(f"  使用 Profile: {profile}")
             click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
             click.echo(f"  批次执行ID: {result.get('apply_id', 'N/A')}")
             if result.get("from_snapshot"):
@@ -437,10 +495,15 @@ def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Opt
 @cli.command("undo")
 @click.option("--batch-id", help="批次ID")
 @click.option("--correction-id", help="指定要撤销的修正ID")
-@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.option("--profile", help="使用保存的 Profile 配置")
+@click.option("--json/--no-json", "output_json", default=None, help="输出JSON格式")
 @click.pass_context
-def undo(ctx, batch_id: Optional[str], correction_id: Optional[str], output_json: bool):
+def undo(ctx, batch_id: Optional[str], correction_id: Optional[str], profile: Optional[str], output_json: Optional[bool]):
     """撤销已应用的修正，状态将正确回退"""
+    profile_obj = _load_and_apply_profile(ctx, profile)
+    effective_args = _get_effective_args(profile_obj, output_json=output_json)
+    effective_output_json = effective_args["output_json"]
+
     config = ctx.obj["config"]
     storage = ctx.obj["storage"]
 
@@ -460,10 +523,12 @@ def undo(ctx, batch_id: Optional[str], correction_id: Optional[str], output_json
             sys.exit(6)
 
         result = undo_corrections(config, storage, batch_id, correction_id)
-        if output_json:
+        if effective_output_json:
             _print_json(result)
         else:
             click.echo(f"[OK] 撤销完成")
+            if profile:
+                click.echo(f"  使用 Profile: {profile}")
             click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
             click.echo(f"  撤销执行ID: {result.get('undo_id', 'N/A')}")
             click.echo(f"  撤销前已应用: {result['total_applied_before']} 个")
@@ -494,20 +559,27 @@ def undo(ctx, batch_id: Optional[str], correction_id: Optional[str], output_json
 
 @cli.command("status")
 @click.option("--batch-id", help="批次ID")
-@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.option("--profile", help="使用保存的 Profile 配置")
+@click.option("--json/--no-json", "output_json", default=None, help="输出JSON格式")
 @click.option("--details", is_flag=True, help="显示详细的修正项列表")
 @click.pass_context
-def status(ctx, batch_id: Optional[str], output_json: bool, details: bool):
+def status(ctx, batch_id: Optional[str], profile: Optional[str], output_json: Optional[bool], details: bool):
     """显示批次执行状态和进度统计"""
+    profile_obj = _load_and_apply_profile(ctx, profile)
+    effective_args = _get_effective_args(profile_obj, output_json=output_json)
+    effective_output_json = effective_args["output_json"]
+
     config = ctx.obj["config"]
     storage = ctx.obj["storage"]
 
     try:
         result = get_batch_status(config, storage, batch_id)
-        if output_json:
+        if effective_output_json:
             _print_json(result)
         else:
             click.echo(f"[OK] 批次状态")
+            if profile:
+                click.echo(f"  使用 Profile: {profile}")
             click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
             click.echo(f"  创建时间: {result['created_at']}")
             click.echo(f"  更新时间: {result['updated_at']}")
@@ -643,6 +715,249 @@ def list_batches(ctx, output_json: bool):
                 click.echo(f"    文件: {b['file_count']}, 清单: {b['delivery_count']}, 修正: {b['correction_count']}")
                 click.echo(f"    更新于: {b['updated_at']}")
     sys.exit(0)
+
+
+@click.group()
+def profile():
+    """管理可持久化运行配置 Profile"""
+    pass
+
+
+cli.add_command(profile)
+
+
+@profile.command("save")
+@click.argument("name")
+@click.option("--description", "-d", default="", help="Profile 描述")
+@click.option("--conflict-strategy", type=click.Choice(["fail", "skip", "overwrite"]), default="fail", help="冲突处理策略")
+@click.option("--resume/--no-resume", default=True, help="是否跳过已完成项继续执行")
+@click.option("--skip-conflicts", is_flag=True, help="跳过冲突项继续执行")
+@click.option("--output-format", type=click.Choice(["text", "json"]), default="text", help="默认输出格式")
+@click.option("--log-level", type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]), default="INFO", help="日志级别")
+@click.option("--default-limit", type=int, help="默认执行数量限制")
+@click.option("--overwrite", is_flag=True, help="覆盖已存在的同名 Profile")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.pass_context
+def profile_save(ctx, name: str, description: str, conflict_strategy: str, resume: bool, skip_conflicts: bool, output_format: str, log_level: str, default_limit: Optional[int], overwrite: bool, output_json: bool):
+    """保存当前运行配置为 Profile"""
+    config = ctx.obj["config"]
+    profile_storage = ctx.obj["profile_storage"]
+
+    try:
+        result = save_profile(
+            config, profile_storage, name, description,
+            conflict_strategy, resume, skip_conflicts, output_format, log_level, default_limit, overwrite
+        )
+        if output_json:
+            _print_json(result)
+        else:
+            click.echo(f"[OK] Profile 已{result['operation']}: {name}")
+            click.echo(f"  描述: {description or '(无)'}")
+            click.echo(f"  冲突策略: {conflict_strategy}")
+            click.echo(f"  自动续跑: {'是' if resume else '否'}")
+            click.echo(f"  跳过冲突: {'是' if skip_conflicts else '否'}")
+            click.echo(f"  输出格式: {output_format}")
+            click.echo(f"  日志级别: {log_level}")
+            if default_limit:
+                click.echo(f"  默认限制: {default_limit} 项")
+        sys.exit(0)
+    except ProfileNameConflictError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] Profile 名称冲突: {e}", err=True)
+        sys.exit(10)
+    except Exception as e:
+        click.echo(f"[FAIL] 保存 Profile 失败: {e}", err=True)
+        sys.exit(1)
+
+
+@profile.command("load")
+@click.argument("name")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.pass_context
+def profile_load(ctx, name: str, output_json: bool):
+    """查看 Profile 详细配置"""
+    profile_storage = ctx.obj["profile_storage"]
+
+    try:
+        result = load_profile(profile_storage, name)
+        if output_json:
+            _print_json(result)
+        else:
+            p = result["profile"]
+            click.echo(f"[OK] Profile: {name}")
+            click.echo(f"  描述: {p.get('description', '(无)')}")
+            click.echo(f"  版本: {p.get('version', 1)}")
+            click.echo(f"  创建时间: {p.get('created_at', 'N/A')}")
+            click.echo(f"  更新时间: {p.get('updated_at', 'N/A')}")
+            click.echo(f"\n归档规则:")
+            click.echo(f"  命名规则: {p.get('naming_rule', 'N/A')}")
+            click.echo(f"  机位: {', '.join(p.get('cameras', []))}")
+            click.echo(f"  哈希算法: {p.get('hash_strategy', 'N/A')}")
+            click.echo(f"  归档目录: {p.get('archive_dir', 'N/A')}")
+            click.echo(f"  工作目录: {p.get('work_dir', 'N/A')}")
+            click.echo(f"\n运行策略:")
+            click.echo(f"  冲突策略: {p.get('conflict_strategy', 'N/A')}")
+            click.echo(f"  自动续跑: {'是' if p.get('resume', True) else '否'}")
+            click.echo(f"  跳过冲突: {'是' if p.get('skip_conflicts', False) else '否'}")
+            click.echo(f"\n输出配置:")
+            click.echo(f"  输出格式: {p.get('output_format', 'N/A')}")
+            click.echo(f"  日志级别: {p.get('log_level', 'N/A')}")
+            if p.get('default_limit'):
+                click.echo(f"  默认限制: {p['default_limit']} 项")
+        sys.exit(0)
+    except ValueError as e:
+        if output_json:
+            _print_json({"error": str(e)})
+        else:
+            click.echo(f"[FAIL] {e}", err=True)
+        sys.exit(1)
+
+
+@profile.command("list")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.pass_context
+def profile_list(ctx, output_json: bool):
+    """列出所有 Profile"""
+    profile_storage = ctx.obj["profile_storage"]
+
+    try:
+        result = list_profiles(profile_storage)
+        if output_json:
+            _print_json(result)
+        else:
+            if result["count"] == 0:
+                click.echo("(没有保存的 Profile)")
+            else:
+                click.echo(f"共 {result['count']} 个 Profile:")
+                for p in result["profiles"]:
+                    click.echo(f"  {p['name']} - {p.get('description', '(无描述)')}")
+                    click.echo(f"    冲突策略: {p.get('conflict_strategy', 'N/A')}, 输出: {p.get('output_format', 'N/A')}")
+                    click.echo(f"    更新于: {p.get('updated_at', 'N/A')}")
+        sys.exit(0)
+    except Exception as e:
+        click.echo(f"[FAIL] 列出 Profile 失败: {e}", err=True)
+        sys.exit(1)
+
+
+@profile.command("delete")
+@click.argument("name")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.pass_context
+def profile_delete(ctx, name: str, output_json: bool):
+    """删除指定 Profile"""
+    profile_storage = ctx.obj["profile_storage"]
+
+    try:
+        result = delete_profile(profile_storage, name)
+        if output_json:
+            _print_json(result)
+        else:
+            click.echo(f"[OK] Profile 已删除: {name}")
+        sys.exit(0)
+    except ValueError as e:
+        if output_json:
+            _print_json({"error": str(e)})
+        else:
+            click.echo(f"[FAIL] {e}", err=True)
+        sys.exit(1)
+
+
+@profile.command("export")
+@click.argument("name")
+@click.argument("output_path")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.pass_context
+def profile_export(ctx, name: str, output_path: str, output_json: bool):
+    """导出 Profile 到 JSON 文件"""
+    profile_storage = ctx.obj["profile_storage"]
+
+    try:
+        result = export_profile(profile_storage, name, output_path)
+        if output_json:
+            _print_json(result)
+        else:
+            click.echo(f"[OK] Profile 已导出: {name} -> {output_path}")
+        sys.exit(0)
+    except ValueError as e:
+        if output_json:
+            _print_json({"error": str(e)})
+        else:
+            click.echo(f"[FAIL] {e}", err=True)
+        sys.exit(1)
+
+
+@profile.command("import")
+@click.argument("import_path")
+@click.option("--overwrite", is_flag=True, help="覆盖已存在的同名 Profile")
+@click.option("--rename", help="重命名导入的 Profile")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.pass_context
+def profile_import(ctx, import_path: str, overwrite: bool, rename: Optional[str], output_json: bool):
+    """从 JSON 文件导入 Profile"""
+    profile_storage = ctx.obj["profile_storage"]
+
+    try:
+        result = import_profile(profile_storage, import_path, overwrite, rename)
+        if output_json:
+            _print_json(result)
+        else:
+            click.echo(f"[OK] Profile 已导入: {result['profile_name']}")
+            if rename:
+                click.echo(f"  重命名为: {rename}")
+        sys.exit(0)
+    except ProfileNameConflictError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] Profile 名称冲突: {e}", err=True)
+            click.echo("提示: 使用 --overwrite 覆盖或 --rename 重命名", err=True)
+        sys.exit(10)
+    except FileNotFoundError as e:
+        if output_json:
+            _print_json({"error": str(e)})
+        else:
+            click.echo(f"[FAIL] {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        if output_json:
+            _print_json({"error": str(e)})
+        else:
+            click.echo(f"[FAIL] 导入 Profile 失败: {e}", err=True)
+        sys.exit(1)
+
+
+@profile.command("audit-log")
+@click.option("--limit", type=int, default=100, help="显示最近的 N 条记录")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.pass_context
+def profile_audit_log(ctx, limit: int, output_json: bool):
+    """查看 Profile 操作审计日志"""
+    profile_storage = ctx.obj["profile_storage"]
+
+    try:
+        result = get_audit_log(profile_storage, limit)
+        if output_json:
+            _print_json(result)
+        else:
+            if result["count"] == 0:
+                click.echo("(没有审计记录)")
+            else:
+                click.echo(f"最近 {result['count']} 条操作记录:")
+                for entry in result["entries"]:
+                    status = "[OK]" if entry["success"] else "[FAIL]"
+                    profile_name = entry.get("profile_name", "N/A")
+                    click.echo(f"  {entry['timestamp']} {status} {entry['operation']} - {profile_name}")
+                    if not entry["success"] and entry.get("error_message"):
+                        click.echo(f"    错误: {entry['error_message']}")
+                    if entry.get("details"):
+                        for k, v in entry["details"].items():
+                            click.echo(f"    {k}: {v}")
+        sys.exit(0)
+    except Exception as e:
+        click.echo(f"[FAIL] 获取审计日志失败: {e}", err=True)
+        sys.exit(1)
 
 
 @cli.command("help-exit-codes")

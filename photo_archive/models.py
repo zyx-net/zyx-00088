@@ -2,9 +2,12 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, TYPE_CHECKING
 import json
 import uuid
+
+if TYPE_CHECKING:
+    from .config import Config
 
 
 class ConflictType(str, Enum):
@@ -514,6 +517,102 @@ class BatchHistory:
         )
 
 
+@dataclass
+class Profile:
+    PROFILE_VERSION = 2
+    name: str
+    description: str = ""
+    version: int = PROFILE_VERSION
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+    naming_rule: str = "{机位}_{批次}_{序号:04d}.{扩展名}"
+    cameras: List[str] = field(default_factory=lambda: ["A", "B", "C"])
+    hash_strategy: str = "sha256"
+    archive_dir: str = "./archive"
+    work_dir: str = "./work"
+    conflict_strategy: str = "fail"
+    resume: bool = True
+    skip_conflicts: bool = False
+    output_format: str = "text"
+    log_level: str = "INFO"
+    default_limit: Optional[int] = None
+
+    def to_dict(self) -> Dict:
+        return {
+            "version": self.version,
+            "name": self.name,
+            "description": self.description,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "naming_rule": self.naming_rule,
+            "cameras": self.cameras,
+            "hash_strategy": self.hash_strategy,
+            "archive_dir": self.archive_dir,
+            "work_dir": self.work_dir,
+            "conflict_strategy": self.conflict_strategy,
+            "resume": self.resume,
+            "skip_conflicts": self.skip_conflicts,
+            "output_format": self.output_format,
+            "log_level": self.log_level,
+            "default_limit": self.default_limit,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "Profile":
+        version = data.get("version", data.get("profile_version", 1))
+        if version < cls.PROFILE_VERSION:
+            data = cls._migrate(data, version)
+        return cls(
+            name=data["name"],
+            description=data.get("description", ""),
+            version=cls.PROFILE_VERSION,
+            created_at=datetime.fromisoformat(data["created_at"]) if data.get("created_at") else datetime.now(),
+            updated_at=datetime.fromisoformat(data["updated_at"]) if data.get("updated_at") else datetime.now(),
+            naming_rule=data.get("naming_rule", "{机位}_{批次}_{序号:04d}.{扩展名}"),
+            cameras=data.get("cameras", ["A", "B", "C"]),
+            hash_strategy=data.get("hash_strategy", "sha256"),
+            archive_dir=data.get("archive_dir", "./archive"),
+            work_dir=data.get("work_dir", "./work"),
+            conflict_strategy=data.get("conflict_strategy", "fail"),
+            resume=data.get("resume", True),
+            skip_conflicts=data.get("skip_conflicts", False),
+            output_format=data.get("output_format", "text"),
+            log_level=data.get("log_level", "INFO"),
+            default_limit=data.get("default_limit", None),
+        )
+
+    @staticmethod
+    def _migrate(data: Dict, from_version: int) -> Dict:
+        if from_version < 2:
+            data.setdefault("conflict_strategy", "fail")
+            data.setdefault("resume", True)
+            data.setdefault("skip_conflicts", False)
+            data.setdefault("output_format", "text")
+            data.setdefault("log_level", "INFO")
+            data.setdefault("default_limit", None)
+        data["version"] = Profile.PROFILE_VERSION
+        return data
+
+    def apply_to_config(self, config: Config) -> None:
+        config.naming_rule = self.naming_rule
+        config.cameras = list(self.cameras)
+        config.hash_strategy = self.hash_strategy
+        config.archive_dir = Path(self.archive_dir)
+        config.work_dir = Path(self.work_dir)
+
+    @classmethod
+    def from_config(cls, name: str, config: Config, description: str = "") -> "Profile":
+        return cls(
+            name=name,
+            description=description,
+            naming_rule=config.naming_rule,
+            cameras=list(config.cameras),
+            hash_strategy=config.hash_strategy,
+            archive_dir=str(config.archive_dir),
+            work_dir=str(config.work_dir),
+        )
+
+
 class BatchNameConflictError(Exception):
     """批次名归一化冲突异常
 
@@ -555,3 +654,56 @@ class BatchNameConflictError(Exception):
             ],
             "message": str(self),
         }
+
+
+class ProfileNameConflictError(Exception):
+    """Profile 名称冲突异常"""
+
+    def __init__(self, profile_name: str, existing_profile: Profile = None, message: Optional[str] = None):
+        self.profile_name = profile_name
+        self.existing_profile = existing_profile
+        if message is None:
+            message = f'Profile "{profile_name}" 已存在'
+        super().__init__(message)
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "profile_name_conflict",
+            "profile_name": self.profile_name,
+            "existing_profile": self.existing_profile.to_dict() if self.existing_profile else None,
+            "message": str(self),
+        }
+
+
+@dataclass
+class AuditLogEntry:
+    entry_id: str
+    timestamp: datetime
+    operation: str
+    profile_name: Optional[str] = None
+    details: Dict = field(default_factory=dict)
+    success: bool = True
+    error_message: Optional[str] = None
+
+    def to_dict(self) -> Dict:
+        return {
+            "entry_id": self.entry_id,
+            "timestamp": self.timestamp.isoformat(),
+            "operation": self.operation,
+            "profile_name": self.profile_name,
+            "details": self.details,
+            "success": self.success,
+            "error_message": self.error_message,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "AuditLogEntry":
+        return cls(
+            entry_id=data["entry_id"],
+            timestamp=datetime.fromisoformat(data["timestamp"]),
+            operation=data["operation"],
+            profile_name=data.get("profile_name"),
+            details=data.get("details", {}),
+            success=data.get("success", True),
+            error_message=data.get("error_message"),
+        )
