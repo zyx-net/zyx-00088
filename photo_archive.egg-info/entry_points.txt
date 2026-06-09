@@ -1,0 +1,2 @@
+[console_scripts]
+photo-archive = photo_archive.cli:cli

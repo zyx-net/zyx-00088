@@ -1,0 +1,6 @@
+target_name,expected_hash,camera,sequence
+A_CLIENT01_0001.jpg,,A,1
+A_CLIENT01_0002.jpg,,A,2
+B_CLIENT01_0001.jpg,,B,1
+B_CLIENT01_0002.jpg,,B,2
+A_CLIENT01_0003.jpg,,A,3

@@ -1,0 +1,7 @@
+﻿naming_rule: "{机位}_{批次}_{序号:04d}.{扩展名}"
+cameras:
+  - A
+  - B
+hash_strategy: sha256
+archive_dir: D:\workSpace\AI__SPACE\zyx-00088\review_runs\main_case2\archive
+work_dir: D:\workSpace\AI__SPACE\zyx-00088\review_runs\main_case2\work

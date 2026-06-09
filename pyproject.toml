@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "photo-archive"
+version = "1.0.0"
+description = "多命令离线相册归档校验 CLI 工具"
+requires-python = ">=3.9"
+dependencies = [
+    "click>=8.1.0",
+    "PyYAML>=6.0",
+]
+
+[project.scripts]
+photo-archive = "photo_archive.cli:cli"
+
+[tool.setuptools.packages.find]
+include = ["photo_archive*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

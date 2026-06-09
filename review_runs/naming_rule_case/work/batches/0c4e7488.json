@@ -1,0 +1,34 @@
+{
+  "batch_id": "0c4e7488",
+  "name": "RENAME",
+  "created_at": "2026-06-09T09:53:43.959206",
+  "updated_at": "2026-06-09T09:53:44.377699",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\naming_rule_case\\source_cards\\card_A\\A_RAW_1234.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\naming_rule_case\\source_cards\\card_A\\A_RAW_1234.jpg",
+      "file_name": "A_RAW_1234.jpg",
+      "size": 18,
+      "hash": "ee9b3577089a1496e0da6bc1aae2a0db9c7a3315abb4b12aa1067cfa57b60af2",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "RAW"
+    }
+  },
+  "delivery_list": {
+    "A_RENAME_0001.jpg": {
+      "target_name": "A_RENAME_0001.jpg",
+      "expected_hash": "ee9b3577089a1496e0da6bc1aae2a0db9c7a3315abb4b12aa1067cfa57b60af2",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "missing",
+      "matched_source": null,
+      "actual_hash": null
+    }
+  },
+  "corrections": [],
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\naming_rule_case\\source_cards",
+  "last_scan_at": "2026-06-09T09:53:43.960871",
+  "last_import_at": "2026-06-09T09:53:44.168387",
+  "last_verify_at": "2026-06-09T09:53:44.377681"
+}

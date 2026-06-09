@@ -1,0 +1,171 @@
+{
+  "batch_id": "d2ae7680",
+  "name": "review-main",
+  "created_at": "2026-06-09T09:52:02.296930",
+  "updated_at": "2026-06-09T09:52:04.366421",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_A\\A_CLIENT01_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_A\\A_CLIENT01_0001.jpg",
+      "file_name": "A_CLIENT01_0001.jpg",
+      "size": 54,
+      "hash": "c00fef547242bd72bb552e206b8a64aecd434616495025573052660f24fb66a3",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "CLIENT01"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_A\\A_CLIENT01_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_A\\A_CLIENT01_0002.jpg",
+      "file_name": "A_CLIENT01_0002.jpg",
+      "size": 54,
+      "hash": "126913fe2a378f188a81b7b730f4537bcc7c13c5ac6b18447f319db94ee8111c",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "CLIENT01"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_A_duplicate\\A_CLIENT01_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_A_duplicate\\A_CLIENT01_0001.jpg",
+      "file_name": "A_CLIENT01_0001.jpg",
+      "size": 54,
+      "hash": "c2cad0392fd7041ab75dbd31449197d3cce17ef5237dad99d84f5044b40e87bf",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "CLIENT01"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_B\\B_CLIENT01_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_B\\B_CLIENT01_0001.jpg",
+      "file_name": "B_CLIENT01_0001.jpg",
+      "size": 54,
+      "hash": "b64c658daeb0f72200f7fa6d512e85fb8976eb9f99c99315f8aa7132b322fcb6",
+      "extension": "jpg",
+      "camera": "B",
+      "detected_batch": "CLIENT01"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_B\\B_CLIENT01_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_B\\B_CLIENT01_0002.jpg",
+      "file_name": "B_CLIENT01_0002.jpg",
+      "size": 54,
+      "hash": "cd1ad8b1848bb323175bee6e1d5ef7d677d7032a5cccc182c2582da1ab216dab",
+      "extension": "jpg",
+      "camera": "B",
+      "detected_batch": "CLIENT01"
+    }
+  },
+  "delivery_list": {
+    "A_CLIENT01_0001.jpg": {
+      "target_name": "A_CLIENT01_0001.jpg",
+      "expected_hash": null,
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "duplicate",
+      "matched_source": null,
+      "actual_hash": null
+    },
+    "A_CLIENT01_0002.jpg": {
+      "target_name": "A_CLIENT01_0002.jpg",
+      "expected_hash": null,
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 2,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_A\\A_CLIENT01_0002.jpg",
+      "actual_hash": "126913fe2a378f188a81b7b730f4537bcc7c13c5ac6b18447f319db94ee8111c"
+    },
+    "B_CLIENT01_0001.jpg": {
+      "target_name": "B_CLIENT01_0001.jpg",
+      "expected_hash": null,
+      "expected_camera": "B",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_B\\B_CLIENT01_0001.jpg",
+      "actual_hash": "b64c658daeb0f72200f7fa6d512e85fb8976eb9f99c99315f8aa7132b322fcb6"
+    },
+    "B_CLIENT01_0002.jpg": {
+      "target_name": "B_CLIENT01_0002.jpg",
+      "expected_hash": null,
+      "expected_camera": "B",
+      "expected_size": null,
+      "sequence": 2,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_B\\B_CLIENT01_0002.jpg",
+      "actual_hash": "cd1ad8b1848bb323175bee6e1d5ef7d677d7032a5cccc182c2582da1ab216dab"
+    },
+    "A_CLIENT01_0003.jpg": {
+      "target_name": "A_CLIENT01_0003.jpg",
+      "expected_hash": null,
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 3,
+      "status": "missing",
+      "matched_source": null,
+      "actual_hash": null
+    }
+  },
+  "corrections": [
+    {
+      "id": "71adecf3-585c-4e3b-ba10-a5e4955be2fd",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_A\\A_CLIENT01_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\archive\\review-main\\A_CLIENT01_0001.jpg",
+      "reason": "重复文件: 选择第一个源文件",
+      "applied": false,
+      "applied_at": "2026-06-09T09:52:03.302875",
+      "rolled_back": true
+    },
+    {
+      "id": "f85d6d96-efac-48d7-93e9-9c6818c3cd13",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_A_duplicate\\A_CLIENT01_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\archive\\review-main\\duplicate_1_A_CLIENT01_0001.jpg",
+      "reason": "重复文件: 重命名保存第2个副本",
+      "applied": false,
+      "applied_at": null,
+      "rolled_back": false
+    },
+    {
+      "id": "e5638668-ebcf-477e-883a-16980c55e9ea",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_A\\A_CLIENT01_0002.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\archive\\review-main\\A_CLIENT01_0002.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": false,
+      "applied_at": null,
+      "rolled_back": false
+    },
+    {
+      "id": "84858d32-49a2-4221-bb28-62fa24e55a79",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_B\\B_CLIENT01_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\archive\\review-main\\B_CLIENT01_0001.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": false,
+      "applied_at": null,
+      "rolled_back": false
+    },
+    {
+      "id": "465164b9-db8c-40d8-911c-83bf205ef892",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards\\card_B\\B_CLIENT01_0002.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\archive\\review-main\\B_CLIENT01_0002.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": false,
+      "applied_at": null,
+      "rolled_back": false
+    },
+    {
+      "id": "d6aa52e0-cfec-4a28-88f8-60cff04edda5",
+      "type": "skip",
+      "source": "",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\archive\\review-main\\A_CLIENT01_0003.jpg",
+      "reason": "缺少文件: A_CLIENT01_0003.jpg",
+      "applied": false,
+      "applied_at": null,
+      "rolled_back": false
+    }
+  ],
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\main_case2\\source_cards",
+  "last_scan_at": "2026-06-09T09:52:04.366402",
+  "last_import_at": "2026-06-09T09:52:02.623578",
+  "last_verify_at": "2026-06-09T09:52:02.835997"
+}

@@ -1,0 +1,8 @@
+naming_rule: "{机位}_{批次}_{序号:04d}.{扩展名}"
+cameras:
+  - A
+  - B
+  - C
+hash_strategy: sha256
+archive_dir: ./archive
+work_dir: ./work

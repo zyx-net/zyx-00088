@@ -1,0 +1,45 @@
+{
+  "batch_id": "8ddf172c",
+  "name": "hash-edge",
+  "created_at": "2026-06-09T09:53:02.516413",
+  "updated_at": "2026-06-09T09:53:03.465812",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\hash_change_case\\source_cards\\card_A\\A_HASHEDGE_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\hash_change_case\\source_cards\\card_A\\A_HASHEDGE_0001.jpg",
+      "file_name": "A_HASHEDGE_0001.jpg",
+      "size": 22,
+      "hash": "4f8715627cf9f3401f0a4276a93ba61550afe03d37dcf07a8b343ad99f9eac78",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "HASHEDGE"
+    }
+  },
+  "delivery_list": {
+    "A_HASHEDGE_0001.jpg": {
+      "target_name": "A_HASHEDGE_0001.jpg",
+      "expected_hash": "4f8715627cf9f3401f0a4276a93ba61550afe03d37dcf07a8b343ad99f9eac78",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\hash_change_case\\source_cards\\card_A\\A_HASHEDGE_0001.jpg",
+      "actual_hash": "4f8715627cf9f3401f0a4276a93ba61550afe03d37dcf07a8b343ad99f9eac78"
+    }
+  },
+  "corrections": [
+    {
+      "id": "f437f028-69ef-456f-86af-b1f18071fa3d",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\hash_change_case\\source_cards\\card_A\\A_HASHEDGE_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\hash_change_case\\archive\\hash-edge\\A_HASHEDGE_0001.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": true,
+      "applied_at": "2026-06-09T09:53:03.465790",
+      "rolled_back": false
+    }
+  ],
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\hash_change_case\\source_cards",
+  "last_scan_at": "2026-06-09T09:53:02.518077",
+  "last_import_at": "2026-06-09T09:53:02.738743",
+  "last_verify_at": "2026-06-09T09:53:02.948284"
+}
