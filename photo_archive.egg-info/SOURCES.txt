@@ -1,3 +1,4 @@
+README.md
 pyproject.toml
 photo_archive/__init__.py
 photo_archive/cli.py
@@ -12,13 +13,21 @@ photo_archive.egg-info/entry_points.txt
 photo_archive.egg-info/requires.txt
 photo_archive.egg-info/top_level.txt
 photo_archive/commands/__init__.py
+photo_archive/commands/acceptance_audit.py
 photo_archive/commands/apply.py
 photo_archive/commands/import_list.py
 photo_archive/commands/init_sample.py
+photo_archive/commands/package.py
 photo_archive/commands/plan.py
+photo_archive/commands/profile.py
 photo_archive/commands/report.py
 photo_archive/commands/scan.py
+photo_archive/commands/status.py
 photo_archive/commands/undo.py
 photo_archive/commands/utils.py
 photo_archive/commands/verify.py
+tests/test_acceptance_audit.py
+tests/test_batch_queue_recovery.py
 tests/test_main_flow.py
+tests/test_multi_manifest_merge.py
+tests/test_profile_system.py

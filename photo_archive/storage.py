@@ -320,3 +320,112 @@ class PackageStorage:
                     result.append(pkg)
         result.sort(key=lambda p: p.created_at, reverse=True)
         return result
+
+
+class AcceptanceAuditStorage:
+    def __init__(self, work_dir: Path):
+        self.work_dir = Path(work_dir)
+        self.audits_dir = self.work_dir / "acceptance_audits"
+        self.audits_dir.mkdir(parents=True, exist_ok=True)
+        self.index_file = self.audits_dir / "index.json"
+
+    def _get_audit_path(self, audit_id: str) -> Path:
+        return self.audits_dir / f"{audit_id}.json"
+
+    def save(self, record: "AcceptanceAuditRecord") -> None:
+        from datetime import datetime
+        from .models import AcceptanceAuditRecord
+        record.updated_at = datetime.now()
+        audit_path = self._get_audit_path(record.audit_id)
+        with open(audit_path, "w", encoding="utf-8") as f:
+            json.dump(record.to_dict(), f, ensure_ascii=False, indent=2)
+        self._update_index(record)
+
+    def load(self, audit_id: str) -> Optional["AcceptanceAuditRecord"]:
+        from .models import AcceptanceAuditRecord
+        audit_path = self._get_audit_path(audit_id)
+        if not audit_path.exists():
+            return None
+        with open(audit_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return AcceptanceAuditRecord.from_dict(data)
+
+    def list_audits(self) -> List[Dict]:
+        if not self.index_file.exists():
+            return []
+        with open(self.index_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def _update_index(self, record: "AcceptanceAuditRecord") -> None:
+        audits = self.list_audits()
+        existing = next((a for a in audits if a["audit_id"] == record.audit_id), None)
+        entry = {
+            "audit_id": record.audit_id,
+            "client_name": record.client_name,
+            "batch_name": record.batch_name,
+            "source_dir": record.source_dir,
+            "started_at": record.started_at.isoformat(),
+            "completed_at": record.completed_at.isoformat() if record.completed_at else None,
+            "status": record.status.value,
+            "total_rules": len(record.results),
+            "passed": sum(1 for r in record.results if r.status.value == "pass"),
+            "failed": sum(1 for r in record.results if r.status.value == "fail"),
+            "warnings": sum(1 for r in record.results if r.status.value == "warning"),
+            "exported_paths": record.exported_paths,
+            "error_message": record.error_message,
+        }
+        if existing:
+            existing.update(entry)
+        else:
+            audits.append(entry)
+        with open(self.index_file, "w", encoding="utf-8") as f:
+            json.dump(audits, f, ensure_ascii=False, indent=2)
+
+    def delete(self, audit_id: str) -> bool:
+        audit_path = self._get_audit_path(audit_id)
+        if audit_path.exists():
+            audit_path.unlink()
+            audits = [a for a in self.list_audits() if a["audit_id"] != audit_id]
+            with open(self.index_file, "w", encoding="utf-8") as f:
+                json.dump(audits, f, ensure_ascii=False, indent=2)
+            return True
+        return False
+
+    def get_latest_audit(self) -> Optional["AcceptanceAuditRecord"]:
+        audits = self.list_audits()
+        if not audits:
+            return None
+        latest = max(audits, key=lambda a: a["started_at"])
+        return self.load(latest["audit_id"])
+
+    def find_audits_by_batch(self, batch_name: str) -> List["AcceptanceAuditRecord"]:
+        audits = self.list_audits()
+        result = []
+        for entry in audits:
+            if entry["batch_name"] == batch_name:
+                audit = self.load(entry["audit_id"])
+                if audit:
+                    result.append(audit)
+        result.sort(key=lambda a: a.started_at, reverse=True)
+        return result
+
+    def find_audits_by_client(self, client_name: str) -> List["AcceptanceAuditRecord"]:
+        audits = self.list_audits()
+        result = []
+        for entry in audits:
+            if entry["client_name"] == client_name:
+                audit = self.load(entry["audit_id"])
+                if audit:
+                    result.append(audit)
+        result.sort(key=lambda a: a.started_at, reverse=True)
+        return result
+
+    def find_recent_audits(self, limit: int = 10) -> List["AcceptanceAuditRecord"]:
+        audits = self.list_audits()
+        audits.sort(key=lambda a: a["started_at"], reverse=True)
+        result = []
+        for entry in audits[:limit]:
+            audit = self.load(entry["audit_id"])
+            if audit:
+                result.append(audit)
+        return result

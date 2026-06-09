@@ -434,3 +434,195 @@ photo_archive/
 **问题**：扫描后文件被篡改，apply 时仍会把脏文件归档成正常批次。
 
 **修复**：apply 执行前重新校验源文件当前哈希；如果扫描后文件被改写，阻止复制、返回退出码 3，并在报告中记录 `hash_mismatch`。
+
+## 交付验收审计
+
+在收包前，使用 `acceptance` 命令对一批照片和配置跑完整检查，生成可追踪的验收记录。
+
+### 验收配置文件 (YAML)
+
+```yaml
+# acceptance_config.yaml
+client_name: "星辰婚纱摄影"
+batch_name: "WEDDING-2024-0601"
+source_dir: "./delivery_package"
+
+# 必备目录（可选，未在 rules 中配置时自动检查）
+required_directories:
+  - "photos"
+  - "videos"
+  - "thumbnails"
+
+# 必备文件（可选，未在 rules 中配置时自动检查）
+required_files:
+  - "manifest.json"
+  - "checksums.sha256"
+  - "交付说明.txt"
+
+# 清单文件（可选，未在 rules 中配置时自动检查）
+manifest_file: "delivery_list/delivery_manifest.csv"
+
+# 期望照片数量（可选，未在 rules 中配置时自动检查）
+expected_photo_count: 150
+
+# 允许的文件扩展名（可选，未在 rules 中配置时自动检查）
+allowed_extensions:
+  - ".jpg"
+  - ".jpeg"
+  - ".png"
+  - ".mp4"
+
+# 文件大小限制（可选，未在 rules 中配置时自动检查）
+min_file_size: 102400    # 100KB
+max_file_size: 52428800  # 50MB
+
+# 自定义规则集（可选，可覆盖自动检查）
+rules:
+  - rule_id: "dir_structure_001"
+    rule_type: "directory_structure"
+    description: "检查交付目录结构"
+    enabled: true
+    parameters:
+      directories:
+        - "photos"
+        - "videos"
+
+  - rule_id: "required_files_001"
+    rule_type: "required_files"
+    description: "检查必备文件"
+    enabled: true
+    parameters:
+      files:
+        - "manifest.json"
+        - "checksums.sha256"
+
+  - rule_id: "photo_count_001"
+    rule_type: "photo_count"
+    description: "检查照片数量（允许 ±5 张容差）"
+    enabled: true
+    parameters:
+      expected_count: 150
+      tolerance: 5
+
+  - rule_id: "file_size_001"
+    rule_type: "file_size"
+    description: "检查文件大小范围"
+    enabled: true
+    parameters:
+      min_size: 102400
+      max_size: 52428800
+      allowed_extensions:
+        - ".jpg"
+        - ".jpeg"
+        - ".png"
+
+  - rule_id: "extension_001"
+    rule_type: "extension"
+    description: "检查文件扩展名"
+    enabled: true
+    parameters:
+      allowed_extensions:
+        - ".jpg"
+        - ".jpeg"
+        - ".png"
+        - ".mp4"
+
+  - rule_id: "duplicate_001"
+    rule_type: "duplicate_filename"
+    description: "检查重复文件名"
+    enabled: true
+    parameters: {}
+
+  - rule_id: "manifest_001"
+    rule_type: "missing_manifest"
+    description: "检查清单文件缺失"
+    enabled: true
+    parameters:
+      manifest_file: "delivery_list/delivery_manifest.csv"
+```
+
+### 常用操作
+
+```bash
+# 1. 运行验收审计，同时导出 JSON 和 CSV 报告
+photo-archive -c config.yaml acceptance run ./acceptance_config.yaml \
+  --json ./reports/acceptance_report.json \
+  --csv ./reports/acceptance_report.csv
+
+# 2. 运行审计，仅显示文本摘要，不导出
+photo-archive -c config.yaml acceptance run ./acceptance_config.yaml
+
+# 3. 覆盖已存在的导出文件
+photo-archive -c config.yaml acceptance run ./acceptance_config.yaml \
+  --json ./reports/acceptance_report.json \
+  --overwrite
+
+# 4. 查询最近的验收记录
+photo-archive -c config.yaml acceptance list
+
+# 5. 按批次筛选记录
+photo-archive -c config.yaml acceptance list --batch WEDDING-2024-0601
+
+# 6. 按客户筛选记录
+photo-archive -c config.yaml acceptance list --client "星辰婚纱摄影"
+
+# 7. 查看审计详情
+photo-archive -c config.yaml acceptance show <audit_id>
+
+# 8. 查看详情，包含检查结果明细和日志
+photo-archive -c config.yaml acceptance show <audit_id> --details --logs
+
+# 9. 重新导出历史审计结果
+photo-archive -c config.yaml acceptance reexport <audit_id> \
+  --json ./reports/reexported_report.json \
+  --csv ./reports/reexported_report.csv
+
+# 10. JSON 格式输出
+photo-archive -c config.yaml acceptance list --json
+photo-archive -c config.yaml acceptance show <audit_id> --json
+```
+
+### 检查类型说明
+
+| 检查类型 | 说明 |
+|----------|------|
+| `directory_structure` | 检查必备目录是否存在 |
+| `required_files` | 检查必备文件是否存在 |
+| `photo_count` | 检查照片数量是否符合期望，支持容差 |
+| `file_size` | 检查文件大小是否在指定范围内 |
+| `extension` | 检查文件扩展名是否被允许 |
+| `duplicate_filename` | 检查是否存在重复文件名 |
+| `missing_manifest` | 检查清单文件中的文件是否都存在 |
+
+### 验收审计退出码
+
+| 退出码 | 说明 |
+|--------|------|
+| **15** | 验收配置错误（缺少必填字段） |
+| **16** | 验收规则冲突（同一类型规则启用多个） |
+| **17** | 待检查目录不存在 |
+| **18** | 导出文件已存在 |
+| **19** | 只读目录写入失败 |
+| **20** | 验收审计失败（存在未通过的检查项） |
+
+### 历史记录特性
+
+- 每次审计都会自动保存到本地（`work/acceptance_audits/`）
+- 跨进程重启后仍可查询所有历史记录
+- 支持按批次、客户筛选记录
+- 支持重新导出历史审计结果为 JSON/CSV
+- 日志中记录输入路径、命中规则、失败原因和导出位置
+
+### 项目结构更新
+
+```
+photo_archive/
+├── cli.py              # CLI 主入口（新增 acceptance 命令组）
+├── config.py           # 配置管理
+├── models.py           # 数据模型（新增审计相关模型）
+├── storage.py          # 持久化（新增 AcceptanceAuditStorage）
+├── scanner.py          # 文件扫描和哈希计算
+└── commands/
+    ├── ...
+    └── acceptance_audit.py  # 验收审计核心逻辑（新增）
+```

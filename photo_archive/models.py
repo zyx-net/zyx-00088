@@ -926,3 +926,271 @@ class AuditLogEntry:
             success=data.get("success", True),
             error_message=data.get("error_message"),
         )
+
+
+class AcceptanceCheckStatus(str, Enum):
+    PENDING = "pending"
+    PASS = "pass"
+    FAIL = "fail"
+    WARNING = "warning"
+
+
+class AcceptanceCheckType(str, Enum):
+    DIRECTORY_STRUCTURE = "directory_structure"
+    REQUIRED_FILES = "required_files"
+    PHOTO_COUNT = "photo_count"
+    FILE_SIZE = "file_size"
+    EXTENSION = "extension"
+    DUPLICATE_FILENAME = "duplicate_filename"
+    MISSING_MANIFEST = "missing_manifest"
+
+
+@dataclass
+class AcceptanceRule:
+    rule_id: str
+    rule_type: AcceptanceCheckType
+    description: str = ""
+    enabled: bool = True
+    parameters: Dict = field(default_factory=dict)
+
+    def to_dict(self) -> Dict:
+        return {
+            "rule_id": self.rule_id,
+            "rule_type": self.rule_type.value,
+            "description": self.description,
+            "enabled": self.enabled,
+            "parameters": self.parameters,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "AcceptanceRule":
+        return cls(
+            rule_id=data["rule_id"],
+            rule_type=AcceptanceCheckType(data["rule_type"]),
+            description=data.get("description", ""),
+            enabled=data.get("enabled", True),
+            parameters=data.get("parameters", {}),
+        )
+
+
+@dataclass
+class AcceptanceCheckResult:
+    rule_id: str
+    rule_type: AcceptanceCheckType
+    status: AcceptanceCheckStatus
+    message: str = ""
+    details: List[Dict] = field(default_factory=list)
+
+    def to_dict(self) -> Dict:
+        return {
+            "rule_id": self.rule_id,
+            "rule_type": self.rule_type.value,
+            "status": self.status.value,
+            "message": self.message,
+            "details": self.details,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "AcceptanceCheckResult":
+        return cls(
+            rule_id=data["rule_id"],
+            rule_type=AcceptanceCheckType(data["rule_type"]),
+            status=AcceptanceCheckStatus(data["status"]),
+            message=data.get("message", ""),
+            details=data.get("details", []),
+        )
+
+
+@dataclass
+class AcceptanceAuditConfig:
+    client_name: str
+    batch_name: str
+    source_dir: str
+    rules: List[AcceptanceRule] = field(default_factory=list)
+    manifest_file: Optional[str] = None
+    expected_photo_count: Optional[int] = None
+    allowed_extensions: List[str] = field(default_factory=list)
+    min_file_size: Optional[int] = None
+    max_file_size: Optional[int] = None
+    required_directories: List[str] = field(default_factory=list)
+    required_files: List[str] = field(default_factory=list)
+
+    def to_dict(self) -> Dict:
+        return {
+            "client_name": self.client_name,
+            "batch_name": self.batch_name,
+            "source_dir": self.source_dir,
+            "rules": [r.to_dict() for r in self.rules],
+            "manifest_file": self.manifest_file,
+            "expected_photo_count": self.expected_photo_count,
+            "allowed_extensions": self.allowed_extensions,
+            "min_file_size": self.min_file_size,
+            "max_file_size": self.max_file_size,
+            "required_directories": self.required_directories,
+            "required_files": self.required_files,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "AcceptanceAuditConfig":
+        return cls(
+            client_name=data["client_name"],
+            batch_name=data["batch_name"],
+            source_dir=data["source_dir"],
+            rules=[AcceptanceRule.from_dict(r) for r in data.get("rules", [])],
+            manifest_file=data.get("manifest_file"),
+            expected_photo_count=data.get("expected_photo_count"),
+            allowed_extensions=data.get("allowed_extensions", []),
+            min_file_size=data.get("min_file_size"),
+            max_file_size=data.get("max_file_size"),
+            required_directories=data.get("required_directories", []),
+            required_files=data.get("required_files", []),
+        )
+
+
+@dataclass
+class AcceptanceAuditRecord:
+    audit_id: str
+    client_name: str
+    batch_name: str
+    source_dir: str
+    started_at: datetime
+    updated_at: datetime = field(default_factory=datetime.now)
+    completed_at: Optional[datetime] = None
+    status: AcceptanceCheckStatus = AcceptanceCheckStatus.PENDING
+    config: Optional[AcceptanceAuditConfig] = None
+    results: List[AcceptanceCheckResult] = field(default_factory=list)
+    exported_paths: Dict[str, str] = field(default_factory=dict)
+    log_entries: List[Dict] = field(default_factory=list)
+    error_message: Optional[str] = None
+
+    def to_dict(self) -> Dict:
+        return {
+            "audit_id": self.audit_id,
+            "client_name": self.client_name,
+            "batch_name": self.batch_name,
+            "source_dir": self.source_dir,
+            "started_at": self.started_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "status": self.status.value,
+            "config": self.config.to_dict() if self.config else None,
+            "results": [r.to_dict() for r in self.results],
+            "exported_paths": self.exported_paths,
+            "log_entries": self.log_entries,
+            "error_message": self.error_message,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "AcceptanceAuditRecord":
+        return cls(
+            audit_id=data["audit_id"],
+            client_name=data["client_name"],
+            batch_name=data["batch_name"],
+            source_dir=data["source_dir"],
+            started_at=datetime.fromisoformat(data["started_at"]),
+            updated_at=datetime.fromisoformat(data.get("updated_at", data["started_at"])),
+            completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
+            status=AcceptanceCheckStatus(data.get("status", AcceptanceCheckStatus.PENDING.value)),
+            config=AcceptanceAuditConfig.from_dict(data["config"]) if data.get("config") else None,
+            results=[AcceptanceCheckResult.from_dict(r) for r in data.get("results", [])],
+            exported_paths=data.get("exported_paths", {}),
+            log_entries=data.get("log_entries", []),
+            error_message=data.get("error_message"),
+        )
+
+    def get_statistics(self) -> Dict:
+        pass_count = sum(1 for r in self.results if r.status == AcceptanceCheckStatus.PASS)
+        fail_count = sum(1 for r in self.results if r.status == AcceptanceCheckStatus.FAIL)
+        warning_count = sum(1 for r in self.results if r.status == AcceptanceCheckStatus.WARNING)
+        return {
+            "total_rules": len(self.results),
+            "passed": pass_count,
+            "failed": fail_count,
+            "warnings": warning_count,
+            "overall": "PASS" if fail_count == 0 else "FAIL",
+        }
+
+
+class AcceptanceAuditError(Exception):
+    """验收审计基础异常"""
+
+    def __init__(self, message: str, error_code: int = 1):
+        super().__init__(message)
+        self.error_code = error_code
+
+
+class AcceptanceConfigError(AcceptanceAuditError):
+    """验收配置错误"""
+
+    def __init__(self, message: str, missing_fields: Optional[List[str]] = None):
+        super().__init__(message, error_code=15)
+        self.missing_fields = missing_fields or []
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "acceptance_config_error",
+            "message": str(self),
+            "missing_fields": self.missing_fields,
+        }
+
+
+class AcceptanceRuleConflictError(AcceptanceAuditError):
+    """验收规则冲突"""
+
+    def __init__(self, message: str, conflicting_rules: Optional[List[str]] = None):
+        super().__init__(message, error_code=16)
+        self.conflicting_rules = conflicting_rules or []
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "acceptance_rule_conflict",
+            "message": str(self),
+            "conflicting_rules": self.conflicting_rules,
+        }
+
+
+class AcceptanceDirectoryNotFoundError(AcceptanceAuditError):
+    """待检查目录不存在"""
+
+    def __init__(self, directory_path: str):
+        super().__init__(f"待检查目录不存在: {directory_path}", error_code=17)
+        self.directory_path = directory_path
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "acceptance_directory_not_found",
+            "message": str(self),
+            "directory_path": self.directory_path,
+        }
+
+
+class AcceptanceExportExistsError(AcceptanceAuditError):
+    """导出文件已存在"""
+
+    def __init__(self, export_path: str):
+        super().__init__(f"导出文件已存在: {export_path}，请删除或使用其他文件名", error_code=18)
+        self.export_path = export_path
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "acceptance_export_exists",
+            "message": str(self),
+            "export_path": self.export_path,
+        }
+
+
+class AcceptanceWritePermissionError(AcceptanceAuditError):
+    """只读目录写入失败"""
+
+    def __init__(self, directory_path: str, export_path: str):
+        super().__init__(f"无法写入导出文件: {export_path}，目录无写入权限: {directory_path}", error_code=19)
+        self.directory_path = directory_path
+        self.export_path = export_path
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "acceptance_write_permission_error",
+            "message": str(self),
+            "directory_path": self.directory_path,
+            "export_path": self.export_path,
+        }

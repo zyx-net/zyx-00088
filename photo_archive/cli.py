@@ -6,7 +6,7 @@ import sys
 import click
 
 from .config import Config
-from .storage import BatchStorage, ProfileStorage, PackageStorage
+from .storage import BatchStorage, ProfileStorage, PackageStorage, AcceptanceAuditStorage
 from .models import (
     BatchNameConflictError,
     ProfileNameConflictError,
@@ -15,6 +15,11 @@ from .models import (
     PackageFileConflictError,
     PackageInsufficientSpaceError,
     PackageSourceModifiedError,
+    AcceptanceConfigError,
+    AcceptanceRuleConflictError,
+    AcceptanceDirectoryNotFoundError,
+    AcceptanceExportExistsError,
+    AcceptanceWritePermissionError,
 )
 from .commands.init_sample import generate_sample_data
 from .commands.scan import scan_directory
@@ -42,6 +47,14 @@ from .commands.profile import (
     apply_profile_to_config,
     merge_profile_with_cli_args,
 )
+from .commands.acceptance_audit import (
+    load_acceptance_config,
+    run_acceptance_audit,
+    list_audit_history,
+    get_audit_detail,
+    reexport_audit_result,
+    generate_text_summary,
+)
 
 
 def _get_config(config_path: str) -> Config:
@@ -58,6 +71,10 @@ def _get_profile_storage(config: Config) -> ProfileStorage:
 
 def _get_package_storage(config: Config) -> PackageStorage:
     return PackageStorage(config.work_dir)
+
+
+def _get_acceptance_storage(config: Config) -> AcceptanceAuditStorage:
+    return AcceptanceAuditStorage(config.work_dir)
 
 
 def _print_json(data) -> None:
@@ -97,6 +114,12 @@ EXIT_CODES = {
     12: "打包文件冲突（目标目录存在同名文件且内容不匹配）",
     13: "磁盘空间不足",
     14: "源文件被篡改（打包时检测到哈希不一致）",
+    15: "验收配置错误（缺少必填字段）",
+    16: "验收规则冲突（同一类型规则启用多个）",
+    17: "待检查目录不存在",
+    18: "导出文件已存在",
+    19: "只读目录写入失败",
+    20: "验收审计失败（存在未通过的检查项）",
 }
 
 
@@ -120,6 +143,12 @@ def cli(ctx, config: str):
       12 - 打包文件冲突
       13 - 磁盘空间不足
       14 - 源文件被篡改
+      15 - 验收配置错误
+      16 - 验收规则冲突
+      17 - 待检查目录不存在
+      18 - 导出文件已存在
+      19 - 只读目录写入失败
+      20 - 验收审计失败
     """
     ctx.ensure_object(dict)
     cfg = _get_config(config)
@@ -127,6 +156,7 @@ def cli(ctx, config: str):
     ctx.obj["storage"] = _get_storage(cfg)
     ctx.obj["profile_storage"] = _get_profile_storage(cfg)
     ctx.obj["package_storage"] = _get_package_storage(cfg)
+    ctx.obj["acceptance_storage"] = _get_acceptance_storage(cfg)
 
 
 @cli.command("init-sample")
@@ -1266,6 +1296,263 @@ def help_exit_codes():
     for code in sorted(EXIT_CODES.keys()):
         click.echo(f"  {code} - {EXIT_CODES[code]}")
     sys.exit(0)
+
+
+@click.group()
+def acceptance():
+    """交付验收审计 - 收包前完整检查照片和配置"""
+    pass
+
+
+cli.add_command(acceptance)
+
+
+@acceptance.command("run")
+@click.argument("acceptance_config")
+@click.option("--json", "export_json", help="导出 JSON 报告的路径")
+@click.option("--csv", "export_csv", help="导出 CSV 报告的路径")
+@click.option("--overwrite", is_flag=True, help="覆盖已存在的导出文件")
+@click.option("--no-summary", is_flag=True, help="不显示文本摘要")
+@click.option("--output-json", is_flag=True, help="输出 JSON 格式到控制台")
+@click.pass_context
+def acceptance_run(
+    ctx,
+    acceptance_config: str,
+    export_json: Optional[str],
+    export_csv: Optional[str],
+    overwrite: bool,
+    no_summary: bool,
+    output_json: bool,
+):
+    """运行交付验收审计，按配置检查目录结构、必备文件、照片数量等"""
+    acceptance_storage = ctx.obj["acceptance_storage"]
+
+    try:
+        config = load_acceptance_config(acceptance_config)
+        result = run_acceptance_audit(
+            config=config,
+            storage=acceptance_storage,
+            export_json=export_json,
+            export_csv=export_csv,
+            overwrite=overwrite,
+        )
+
+        if output_json:
+            _print_json(result)
+        elif not no_summary:
+            click.echo(result["text_summary"])
+
+        if export_json:
+            click.echo(f"\n[OK] JSON 报告已导出: {export_json}")
+        if export_csv:
+            click.echo(f"[OK] CSV 报告已导出: {export_csv}")
+
+        stats = result["statistics"]
+        if stats["failed"] > 0:
+            sys.exit(20)
+        sys.exit(0)
+
+    except AcceptanceConfigError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] 验收配置错误: {e}", err=True)
+            if e.missing_fields:
+                click.echo(f"  缺少字段: {', '.join(e.missing_fields)}", err=True)
+        sys.exit(15)
+    except AcceptanceRuleConflictError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] 验收规则冲突: {e}", err=True)
+            if e.conflicting_rules:
+                for rule in e.conflicting_rules:
+                    click.echo(f"  - {rule}", err=True)
+        sys.exit(16)
+    except AcceptanceDirectoryNotFoundError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] 目录不存在: {e}", err=True)
+        sys.exit(17)
+    except AcceptanceExportExistsError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] 导出文件已存在: {e}", err=True)
+            click.echo("提示: 使用 --overwrite 可强制覆盖", err=True)
+        sys.exit(18)
+    except AcceptanceWritePermissionError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] 写入权限错误: {e}", err=True)
+        sys.exit(19)
+    except Exception as e:
+        if output_json:
+            _print_json({"error": str(e)})
+        else:
+            click.echo(f"[FAIL] 验收审计失败: {e}", err=True)
+        sys.exit(1)
+
+
+@acceptance.command("list")
+@click.option("--batch", "batch_name", help="按批次名称筛选")
+@click.option("--client", "client_name", help="按客户名称筛选")
+@click.option("--limit", type=int, default=10, help="显示最近的 N 条记录")
+@click.option("--json", "output_json", is_flag=True, help="输出 JSON 格式")
+@click.pass_context
+def acceptance_list(ctx, batch_name: Optional[str], client_name: Optional[str], limit: int, output_json: bool):
+    """查询验收审计历史记录（跨进程重启后仍可查看）"""
+    acceptance_storage = ctx.obj["acceptance_storage"]
+
+    try:
+        result = list_audit_history(acceptance_storage, batch_name, client_name, limit)
+        if output_json:
+            _print_json(result)
+        else:
+            if result["count"] == 0:
+                click.echo("(没有验收审计记录)")
+            else:
+                filter_info = ""
+                if batch_name:
+                    filter_info = f"（批次: {batch_name}）"
+                elif client_name:
+                    filter_info = f"（客户: {client_name}）"
+                click.echo(f"共 {result['count']} 条验收审计记录{filter_info}（最近 {limit} 条）:")
+                for audit in result["audits"]:
+                    status_icon = {
+                        "pass": "[✓]",
+                        "fail": "[✗]",
+                        "warning": "[!]",
+                        "pending": "[·]",
+                    }.get(audit["status"], "[?]")
+                    stats = audit["statistics"]
+                    click.echo(f"  {status_icon} {audit['audit_id']} - {audit['client_name']} / {audit['batch_name']}")
+                    click.echo(f"      源目录: {audit['source_dir']}")
+                    click.echo(f"      时间: {audit['started_at']}")
+                    click.echo(f"      状态: {audit['status']}, 通过: {stats['passed']}, 失败: {stats['failed']}, 警告: {stats['warnings']}")
+                    if audit.get("exported_paths"):
+                        for fmt, path in audit["exported_paths"].items():
+                            click.echo(f"      {fmt.upper()}: {path}")
+        sys.exit(0)
+    except Exception as e:
+        click.echo(f"[FAIL] 查询历史记录失败: {e}", err=True)
+        sys.exit(1)
+
+
+@acceptance.command("show")
+@click.argument("audit_id")
+@click.option("--json", "output_json", is_flag=True, help="输出 JSON 格式")
+@click.option("--no-summary", is_flag=True, help="不显示文本摘要")
+@click.option("--details", is_flag=True, help="显示详细的检查结果")
+@click.option("--logs", is_flag=True, help="显示审计日志")
+@click.pass_context
+def acceptance_show(ctx, audit_id: str, output_json: bool, no_summary: bool, details: bool, logs: bool):
+    """查看验收审计详情"""
+    acceptance_storage = ctx.obj["acceptance_storage"]
+
+    try:
+        result = get_audit_detail(acceptance_storage, audit_id)
+        if output_json:
+            _print_json(result)
+        else:
+            if not no_summary:
+                click.echo(result["text_summary"])
+
+            if details and result.get("results"):
+                click.echo("\n" + "=" * 60)
+                click.echo("  检查结果详情")
+                click.echo("=" * 60)
+                for r in result["results"]:
+                    status_icon = {"pass": "✓", "fail": "✗", "warning": "!"}.get(r["status"], "?")
+                    click.echo(f"\n{status_icon} [{r['rule_type']}] {r['rule_id']}: {r['message']}")
+                    if r.get("details"):
+                        click.echo("  详细数据:")
+                        for d in r["details"][:5]:
+                            click.echo(f"    - {json.dumps(d, ensure_ascii=False)}")
+                        if len(r["details"]) > 5:
+                            click.echo(f"    ... 还有 {len(r['details']) - 5} 条记录")
+
+            if logs and result.get("log_entries"):
+                click.echo("\n" + "=" * 60)
+                click.echo("  审计日志")
+                click.echo("=" * 60)
+                for entry in result["log_entries"]:
+                    status = "[OK]" if entry.get("success", True) else "[FAIL]"
+                    click.echo(f"  {entry.get('timestamp', '')} {status} {entry.get('operation', '')}")
+                    if entry.get("details"):
+                        for k, v in entry["details"].items():
+                            click.echo(f"    {k}: {v}")
+
+        sys.exit(0)
+    except ValueError as e:
+        click.echo(f"[FAIL] {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"[FAIL] 获取详情失败: {e}", err=True)
+        sys.exit(1)
+
+
+@acceptance.command("reexport")
+@click.argument("audit_id")
+@click.option("--json", "export_json", help="导出 JSON 报告的路径")
+@click.option("--csv", "export_csv", help="导出 CSV 报告的路径")
+@click.option("--overwrite", is_flag=True, help="覆盖已存在的导出文件")
+@click.option("--json-output", "output_json", is_flag=True, help="输出 JSON 格式到控制台")
+@click.pass_context
+def acceptance_reexport(
+    ctx,
+    audit_id: str,
+    export_json: Optional[str],
+    export_csv: Optional[str],
+    overwrite: bool,
+    output_json: bool,
+):
+    """重新导出历史验收审计结果"""
+    acceptance_storage = ctx.obj["acceptance_storage"]
+
+    try:
+        if not export_json and not export_csv:
+            click.echo("[FAIL] 请至少指定一个导出格式（--json 或 --csv）", err=True)
+            sys.exit(1)
+
+        result = reexport_audit_result(
+            storage=acceptance_storage,
+            audit_id=audit_id,
+            export_json=export_json,
+            export_csv=export_csv,
+            overwrite=overwrite,
+        )
+
+        if output_json:
+            _print_json(result)
+        else:
+            click.echo(f"[OK] 审计记录 {audit_id} 已重新导出")
+            for fmt, path in result["exported_paths"].items():
+                click.echo(f"  {fmt.upper()}: {path}")
+
+        sys.exit(0)
+
+    except ValueError as e:
+        click.echo(f"[FAIL] {e}", err=True)
+        sys.exit(1)
+    except AcceptanceExportExistsError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] 导出文件已存在: {e}", err=True)
+            click.echo("提示: 使用 --overwrite 可强制覆盖", err=True)
+        sys.exit(18)
+    except AcceptanceWritePermissionError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] 写入权限错误: {e}", err=True)
+        sys.exit(19)
+    except Exception as e:
+        click.echo(f"[FAIL] 重新导出失败: {e}", err=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
