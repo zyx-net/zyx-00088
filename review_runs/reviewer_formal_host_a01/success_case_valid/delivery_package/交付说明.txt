@@ -1,0 +1,34 @@
+============================================================
+照片交付说明
+============================================================
+
+批次名称: review-valid
+批次ID: 3893e648
+打包ID: 3e2ded12
+生成时间: 2026-06-09 19:32:19
+
+总计文件: 3 个
+总计大小: 24 B
+
+备注:
+  reviewer valid success case
+
+目录结构:
+  photos/ (原始照片)
+    文件数量: 3 个
+    总大小: 24 B
+
+校验文件:
+  - manifest.json: 详细的文件清单和元数据
+  - checksums.sha256: SHA256 校验和，可用于验证文件完整性
+
+校验方法:
+  Windows (PowerShell):
+    Get-FileHash -Algorithm SHA256 delivery_package/photos/*.jpg | Format-Table
+
+  macOS/Linux:
+    cd delivery_package && sha256sum -c checksums.sha256
+
+============================================================
+本交付包由 photo-archive 工具自动生成
+============================================================

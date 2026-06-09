@@ -1,0 +1,42 @@
+[
+  {
+    "package_id": "1de64e3b",
+    "batch_id": "3893e648",
+    "batch_name": "review-valid",
+    "target_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\success_case_valid\\delivery_package",
+    "status": "dry_run",
+    "created_at": "2026-06-09T19:32:19.335978",
+    "updated_at": "2026-06-09T19:32:19.336069",
+    "started_at": null,
+    "completed_at": null,
+    "total_files": 3,
+    "total_size": 24,
+    "copied_files": 0,
+    "copied_size": 0,
+    "skipped_files": 0,
+    "failed_files": 0,
+    "dry_run": true,
+    "notes": null,
+    "error_message": null
+  },
+  {
+    "package_id": "3e2ded12",
+    "batch_id": "3893e648",
+    "batch_name": "review-valid",
+    "target_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\success_case_valid\\delivery_package",
+    "status": "completed",
+    "created_at": "2026-06-09T19:32:19.552062",
+    "updated_at": "2026-06-09T19:32:19.557282",
+    "started_at": "2026-06-09T19:32:19.552255",
+    "completed_at": "2026-06-09T19:32:19.557277",
+    "total_files": 3,
+    "total_size": 24,
+    "copied_files": 3,
+    "copied_size": 24,
+    "skipped_files": 0,
+    "failed_files": 0,
+    "dry_run": false,
+    "notes": "reviewer valid success case",
+    "error_message": null
+  }
+]

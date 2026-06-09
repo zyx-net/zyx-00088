@@ -15,6 +15,7 @@
 - **撤销**：回滚已应用的修正操作，状态自动正确回退
 - **状态查询**：实时查看批次进度、待执行/已完成/冲突/可撤销数量统计
 - **导出报告**：生成 JSON/CSV 格式的校验报告
+- **交付包打包**：在校验和归档完成后，生成可交付给客户的目录包，包含 manifest.json、校验摘要和交付说明
 
 ## 快速开始
 
@@ -51,6 +52,12 @@ photo-archive -c config.yaml apply --from-snapshot <snapshot_id>
 
 # 10. 导出报告
 photo-archive -c config.yaml report -o report.json --format json
+
+# 11. 预览交付包（不实际执行）
+photo-archive -c config.yaml package create ./delivery_package --dry-run
+
+# 12. 实际打包交付
+photo-archive -c config.yaml package create ./delivery_package --notes "2024年婚礼照片交付"
 ```
 
 ## 可恢复批次工作流
@@ -101,6 +108,10 @@ work_dir: ./work
 | **7** | 合并冲突（多清单导入存在冲突，需要人工解决） |
 | **8** | 批次名冲突（归一化后与现有批次冲突，需要人工处理） |
 | **9** | 执行冲突（目标文件被外部修改或内容不匹配，不会静默覆盖） |
+| **11** | 打包目标目录已存在 |
+| **12** | 打包文件冲突（目标目录存在同名文件且内容不匹配） |
+| **13** | 磁盘空间不足 |
+| **14** | 源文件被篡改（打包时检测到哈希不一致） |
 
 也可以通过命令查看：
 ```bash
@@ -128,6 +139,9 @@ photo-archive help-exit-codes
 | `profile export` | 导出 Profile 到 JSON 文件 |
 | `profile import` | 从 JSON 文件导入 Profile |
 | `profile audit-log` | 查看 Profile 操作审计日志 |
+| `package create` | 创建交付包，支持 dry-run 预览、按机位/文件名筛选 |
+| `package list` | 查询打包历史记录（跨进程重启后仍可查看） |
+| `package show` | 查看打包详情 |
 | `help-exit-codes` | 显示非零退出码说明 |
 
 ### 新增命令选项说明
@@ -259,6 +273,124 @@ photo-archive -c config.yaml apply --profile "wedding-client" --batch-id "..."
 |--------|------|
 | **10** | Profile 名称冲突（导入或保存同名 Profile 且未使用 --overwrite） |
 
+## 交付包打包
+
+在校验和归档完成后，可以使用 `package` 命令生成可交付给客户的目录包。
+
+### 交付包目录结构
+
+```
+delivery_package/
+├── photos/              # 原始照片
+├── videos/              # 视频文件（如有）
+├── thumbnails/          # 缩略图（预留目录）
+├── selected/            # 精选照片（预留目录）
+├── manifest.json        # 详细文件清单和元数据
+├── checksums.sha256     # SHA256 校验摘要
+└── 交付说明.txt          # 可读的交付说明
+```
+
+### 常用操作
+
+```bash
+# 1. 预览打包（dry-run）- 查看将复制哪些文件、占用多少空间
+photo-archive -c config.yaml package create ./delivery_package --dry-run
+
+# 2. 按机位筛选打包（仅打包 A 机位的照片）
+photo-archive -c config.yaml package create ./delivery_package --camera A
+
+# 3. 按文件名筛选（仅包含指定文件）
+photo-archive -c config.yaml package create ./delivery_package \
+  --include A_WEDDING_0001.jpg --include A_WEDDING_0002.jpg
+
+# 4. 排除指定文件
+photo-archive -c config.yaml package create ./delivery_package \
+  --exclude A_WEDDING_0005.jpg --exclude B_WEDDING_0010.jpg
+
+# 5. 添加交付备注
+photo-archive -c config.yaml package create ./delivery_package \
+  --notes "2024年6月1日婚礼照片交付，共3个机位"
+
+# 6. 目标目录已存在时强制覆盖
+photo-archive -c config.yaml package create ./delivery_package --force
+
+# 7. 遇到文件冲突时跳过（不中断打包）
+photo-archive -c config.yaml package create ./delivery_package --skip-conflicts
+
+# 8. JSON 格式输出
+photo-archive -c config.yaml package create ./delivery_package --json
+
+# 9. 查询打包历史记录
+photo-archive -c config.yaml package list
+
+# 10. 按批次ID筛选记录
+photo-archive -c config.yaml package list --batch-id <batch_id>
+
+# 11. 按状态筛选记录
+photo-archive -c config.yaml package list --status completed
+
+# 12. 查看打包详情
+photo-archive -c config.yaml package show <package_id>
+
+# 13. 查看打包详情及文件列表
+photo-archive -c config.yaml package show <package_id> --files
+
+# 14. JSON 格式输出详情
+photo-archive -c config.yaml package show <package_id> --json
+```
+
+### package create 命令选项
+
+| 选项 | 说明 |
+|------|------|
+| `target_dir` | 目标目录路径（位置参数） |
+| `--batch-id` | 指定批次ID，不指定则使用最新批次 |
+| `--batch-name` | 按批次名称选择 |
+| `--notes` | 交付说明备注 |
+| `--include` | 仅包含指定文件名（可多次指定） |
+| `--exclude` | 排除指定文件名（可多次指定） |
+| `--camera` | 仅包含指定机位的照片（可多次指定） |
+| `--dry-run` | 预览模式，不实际执行 |
+| `--json` | 输出JSON格式 |
+| `--force` | 强制覆盖已存在的目标目录 |
+| `--skip-conflicts` | 跳过文件冲突项，继续打包其他文件 |
+
+### 打包退出码
+
+| 退出码 | 说明 |
+|--------|------|
+| **11** | 打包目标目录已存在 |
+| **12** | 打包文件冲突（目标目录存在同名文件且内容不匹配） |
+| **13** | 磁盘空间不足 |
+| **14** | 源文件被篡改（打包时检测到哈希不一致） |
+
+### 校验交付文件完整性
+
+交付包中包含 `checksums.sha256` 文件，可用于验证文件完整性：
+
+```bash
+# macOS / Linux
+cd delivery_package
+sha256sum -c checksums.sha256
+
+# Windows PowerShell
+Get-FileHash -Algorithm SHA256 delivery_package/photos/*.jpg | Format-Table
+```
+
+### manifest.json 内容说明
+
+`manifest.json` 包含完整的打包元数据，主要字段：
+
+| 字段 | 说明 |
+|------|------|
+| `package_id` | 打包唯一标识 |
+| `batch_id` / `batch_name` | 关联的批次信息 |
+| `generated_at` | 生成时间 |
+| `total_files` / `total_size` | 总文件数和总大小 |
+| `package_structure` | 目录结构统计 |
+| `files` | 打包文件列表（含哈希、大小、机位等） |
+| `skipped_files` | 跳过的文件列表及原因 |
+
 ## 报告内容
 
 报告包含以下部分：
@@ -285,7 +417,8 @@ photo_archive/
     ├── plan.py         # 生成修正计划
     ├── apply.py        # 应用修正
     ├── undo.py         # 撤销
-    └── report.py       # 导出报告
+    ├── report.py       # 导出报告
+    └── package.py      # 交付包打包
 ```
 
 ## 修复的关键漏洞

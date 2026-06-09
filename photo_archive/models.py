@@ -675,6 +675,225 @@ class ProfileNameConflictError(Exception):
         }
 
 
+class PackageStatus(str, Enum):
+    PENDING = "pending"
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    FAILED = "failed"
+    CANCELLED = "cancelled"
+    DRY_RUN = "dry_run"
+
+
+@dataclass
+class PackageFileItem:
+    source_path: str
+    target_path: str
+    file_name: str
+    size: int
+    hash: str
+    camera: Optional[str] = None
+    status: FileStatus = FileStatus.OK
+    copied: bool = False
+    skip_reason: Optional[str] = None
+
+    def to_dict(self) -> Dict:
+        return {
+            "source_path": self.source_path,
+            "target_path": self.target_path,
+            "file_name": self.file_name,
+            "size": self.size,
+            "hash": self.hash,
+            "camera": self.camera,
+            "status": self.status.value,
+            "copied": self.copied,
+            "skip_reason": self.skip_reason,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "PackageFileItem":
+        return cls(
+            source_path=data["source_path"],
+            target_path=data["target_path"],
+            file_name=data["file_name"],
+            size=data["size"],
+            hash=data["hash"],
+            camera=data.get("camera"),
+            status=FileStatus(data.get("status", FileStatus.OK.value)),
+            copied=data.get("copied", False),
+            skip_reason=data.get("skip_reason"),
+        )
+
+
+@dataclass
+class PackageRecord:
+    package_id: str
+    batch_id: str
+    batch_name: str
+    target_dir: str
+    status: PackageStatus
+    created_at: datetime = field(default_factory=datetime.now)
+    updated_at: datetime = field(default_factory=datetime.now)
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    total_files: int = 0
+    total_size: int = 0
+    copied_files: int = 0
+    copied_size: int = 0
+    skipped_files: int = 0
+    failed_files: int = 0
+    dry_run: bool = False
+    items: List[PackageFileItem] = field(default_factory=list)
+    skipped_items: List[PackageFileItem] = field(default_factory=list)
+    failed_items: List[Dict] = field(default_factory=list)
+    input_batches: List[str] = field(default_factory=list)
+    manifest_path: Optional[str] = None
+    checksum_path: Optional[str] = None
+    readme_path: Optional[str] = None
+    package_structure: Dict = field(default_factory=dict)
+    notes: str = ""
+    error_message: Optional[str] = None
+
+    def to_dict(self) -> Dict:
+        return {
+            "package_id": self.package_id,
+            "batch_id": self.batch_id,
+            "batch_name": self.batch_name,
+            "target_dir": self.target_dir,
+            "status": self.status.value,
+            "created_at": self.created_at.isoformat(),
+            "updated_at": self.updated_at.isoformat(),
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "total_files": self.total_files,
+            "total_size": self.total_size,
+            "copied_files": self.copied_files,
+            "copied_size": self.copied_size,
+            "skipped_files": self.skipped_files,
+            "failed_files": self.failed_files,
+            "dry_run": self.dry_run,
+            "items": [i.to_dict() for i in self.items],
+            "skipped_items": [i.to_dict() for i in self.skipped_items],
+            "failed_items": self.failed_items,
+            "input_batches": self.input_batches,
+            "manifest_path": self.manifest_path,
+            "checksum_path": self.checksum_path,
+            "readme_path": self.readme_path,
+            "package_structure": self.package_structure,
+            "notes": self.notes,
+            "error_message": self.error_message,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "PackageRecord":
+        return cls(
+            package_id=data["package_id"],
+            batch_id=data["batch_id"],
+            batch_name=data["batch_name"],
+            target_dir=data["target_dir"],
+            status=PackageStatus(data["status"]),
+            created_at=datetime.fromisoformat(data["created_at"]),
+            updated_at=datetime.fromisoformat(data["updated_at"]),
+            started_at=datetime.fromisoformat(data["started_at"]) if data.get("started_at") else None,
+            completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
+            total_files=data.get("total_files", 0),
+            total_size=data.get("total_size", 0),
+            copied_files=data.get("copied_files", 0),
+            copied_size=data.get("copied_size", 0),
+            skipped_files=data.get("skipped_files", 0),
+            failed_files=data.get("failed_files", 0),
+            dry_run=data.get("dry_run", False),
+            items=[PackageFileItem.from_dict(i) for i in data.get("items", [])],
+            skipped_items=[PackageFileItem.from_dict(i) for i in data.get("skipped_items", [])],
+            failed_items=data.get("failed_items", []),
+            input_batches=data.get("input_batches", []),
+            manifest_path=data.get("manifest_path"),
+            checksum_path=data.get("checksum_path"),
+            readme_path=data.get("readme_path"),
+            package_structure=data.get("package_structure", {}),
+            notes=data.get("notes", ""),
+            error_message=data.get("error_message"),
+        )
+
+
+class PackageTargetExistsError(Exception):
+    """打包目标目录已存在异常"""
+
+    def __init__(self, target_dir: str, message: Optional[str] = None):
+        self.target_dir = target_dir
+        if message is None:
+            message = f'目标目录已存在: {target_dir}，请删除或使用其他目录'
+        super().__init__(message)
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "package_target_exists",
+            "target_dir": self.target_dir,
+            "message": str(self),
+        }
+
+
+class PackageFileConflictError(Exception):
+    """打包文件冲突异常"""
+
+    def __init__(self, file_name: str, target_path: str, message: Optional[str] = None):
+        self.file_name = file_name
+        self.target_path = target_path
+        if message is None:
+            message = f'目标文件已存在且内容不匹配: {target_path}'
+        super().__init__(message)
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "package_file_conflict",
+            "file_name": self.file_name,
+            "target_path": self.target_path,
+            "message": str(self),
+        }
+
+
+class PackageInsufficientSpaceError(Exception):
+    """磁盘空间不足异常"""
+
+    def __init__(self, required: int, available: int, target_dir: str, message: Optional[str] = None):
+        self.required = required
+        self.available = available
+        self.target_dir = target_dir
+        if message is None:
+            message = (f'磁盘空间不足: 需要 {required} bytes，可用 {available} bytes，'
+                       f'缺少 {required - available} bytes')
+        super().__init__(message)
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "package_insufficient_space",
+            "required": self.required,
+            "available": self.available,
+            "target_dir": self.target_dir,
+            "message": str(self),
+        }
+
+
+class PackageSourceModifiedError(Exception):
+    """源文件被篡改异常"""
+
+    def __init__(self, source_path: str, expected_hash: str, actual_hash: str, message: Optional[str] = None):
+        self.source_path = source_path
+        self.expected_hash = expected_hash
+        self.actual_hash = actual_hash
+        if message is None:
+            message = f'源文件已被篡改: {source_path}，期望哈希: {expected_hash[:16]}...，实际哈希: {actual_hash[:16]}...'
+        super().__init__(message)
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "package_source_modified",
+            "source_path": self.source_path,
+            "expected_hash": self.expected_hash,
+            "actual_hash": self.actual_hash,
+            "message": str(self),
+        }
+
+
 @dataclass
 class AuditLogEntry:
     entry_id: str

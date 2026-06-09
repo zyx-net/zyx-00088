@@ -1,0 +1,6 @@
+naming_rule: "{camera}_{batch}_{sequence:04d}.{extension}"
+cameras:
+  - A
+hash_strategy: sha256
+archive_dir: D:\workSpace\AI__SPACE\zyx-00088\review_runs\reviewer_formal_host_a01\source_modified_case_valid\archive
+work_dir: D:\workSpace\AI__SPACE\zyx-00088\review_runs\reviewer_formal_host_a01\source_modified_case_valid\work

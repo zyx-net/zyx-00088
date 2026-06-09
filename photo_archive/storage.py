@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 import json
 
-from .models import BatchHistory, Profile, ProfileNameConflictError, AuditLogEntry
+from .models import BatchHistory, Profile, ProfileNameConflictError, AuditLogEntry, PackageRecord
 
 
 class BatchStorage:
@@ -218,3 +218,105 @@ class ProfileStorage:
         entries = [AuditLogEntry.from_dict(d) for d in logs]
         entries.sort(key=lambda e: e.timestamp, reverse=True)
         return entries[:limit]
+
+
+class PackageStorage:
+    def __init__(self, work_dir: Path):
+        self.work_dir = Path(work_dir)
+        self.packages_dir = self.work_dir / "packages"
+        self.packages_dir.mkdir(parents=True, exist_ok=True)
+        self.index_file = self.packages_dir / "index.json"
+
+    def _get_package_path(self, package_id: str) -> Path:
+        return self.packages_dir / f"{package_id}.json"
+
+    def save(self, package: PackageRecord) -> None:
+        from datetime import datetime
+        package.updated_at = datetime.now()
+        package_path = self._get_package_path(package.package_id)
+        with open(package_path, "w", encoding="utf-8") as f:
+            json.dump(package.to_dict(), f, ensure_ascii=False, indent=2)
+        self._update_index(package)
+
+    def load(self, package_id: str) -> Optional[PackageRecord]:
+        package_path = self._get_package_path(package_id)
+        if not package_path.exists():
+            return None
+        with open(package_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        return PackageRecord.from_dict(data)
+
+    def list_packages(self) -> List[Dict]:
+        if not self.index_file.exists():
+            return []
+        with open(self.index_file, "r", encoding="utf-8") as f:
+            return json.load(f)
+
+    def _update_index(self, package: PackageRecord) -> None:
+        packages = self.list_packages()
+        existing = next((p for p in packages if p["package_id"] == package.package_id), None)
+        entry = {
+            "package_id": package.package_id,
+            "batch_id": package.batch_id,
+            "batch_name": package.batch_name,
+            "target_dir": package.target_dir,
+            "status": package.status.value,
+            "created_at": package.created_at.isoformat(),
+            "updated_at": package.updated_at.isoformat(),
+            "started_at": package.started_at.isoformat() if package.started_at else None,
+            "completed_at": package.completed_at.isoformat() if package.completed_at else None,
+            "total_files": package.total_files,
+            "total_size": package.total_size,
+            "copied_files": package.copied_files,
+            "copied_size": package.copied_size,
+            "skipped_files": package.skipped_files,
+            "failed_files": package.failed_files,
+            "dry_run": package.dry_run,
+            "notes": package.notes,
+            "error_message": package.error_message,
+        }
+        if existing:
+            existing.update(entry)
+        else:
+            packages.append(entry)
+        with open(self.index_file, "w", encoding="utf-8") as f:
+            json.dump(packages, f, ensure_ascii=False, indent=2)
+
+    def delete(self, package_id: str) -> bool:
+        package_path = self._get_package_path(package_id)
+        if package_path.exists():
+            package_path.unlink()
+            packages = [p for p in self.list_packages() if p["package_id"] != package_id]
+            with open(self.index_file, "w", encoding="utf-8") as f:
+                json.dump(packages, f, ensure_ascii=False, indent=2)
+            return True
+        return False
+
+    def get_latest_package(self) -> Optional[PackageRecord]:
+        packages = self.list_packages()
+        if not packages:
+            return None
+        latest = max(packages, key=lambda p: p["updated_at"])
+        return self.load(latest["package_id"])
+
+    def find_packages_by_batch(self, batch_id: str) -> List[PackageRecord]:
+        packages = self.list_packages()
+        result = []
+        for entry in packages:
+            if entry["batch_id"] == batch_id:
+                pkg = self.load(entry["package_id"])
+                if pkg:
+                    result.append(pkg)
+        result.sort(key=lambda p: p.created_at, reverse=True)
+        return result
+
+    def find_packages_by_status(self, status: str) -> List[PackageRecord]:
+        packages = self.list_packages()
+        result = []
+        for entry in packages:
+            if entry["status"] == status:
+                pkg = self.load(entry["package_id"])
+                if pkg:
+                    result.append(pkg)
+        result.sort(key=lambda p: p.created_at, reverse=True)
+        return result

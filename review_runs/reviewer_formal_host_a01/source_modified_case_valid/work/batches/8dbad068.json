@@ -1,0 +1,162 @@
+{
+  "batch_id": "8dbad068",
+  "name": "review-modified",
+  "created_at": "2026-06-09T19:32:59.573861",
+  "updated_at": "2026-06-09T19:33:18.046555",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\source_cards\\card_A\\A_MODPKG_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\source_cards\\card_A\\A_MODPKG_0001.jpg",
+      "file_name": "A_MODPKG_0001.jpg",
+      "size": 25,
+      "hash": "101ec7d28262e189ef00493071cf4590eb7e97a0c0947e7d24609ad74db212af",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "MODPKG"
+    }
+  },
+  "delivery_list": {
+    "A_MODPKG_0001.jpg": {
+      "target_name": "A_MODPKG_0001.jpg",
+      "expected_hash": "7671e11b94a78957283b2ef6e5269934fa586ae6a5a16980831d6dbe23935200",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "hash_mismatch",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\source_cards\\card_A\\A_MODPKG_0001.jpg",
+      "actual_hash": "101ec7d28262e189ef00493071cf4590eb7e97a0c0947e7d24609ad74db212af"
+    }
+  },
+  "corrections": [
+    {
+      "id": "2077a885-8c6a-4eb9-b49c-2a5bfadc872c",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\source_cards\\card_A\\A_MODPKG_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\archive\\review-modified\\A_MODPKG_0001.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "status": "completed",
+      "applied": true,
+      "applied_at": "2026-06-09T19:33:00.468407",
+      "rolled_back": false,
+      "source_hash": "7671e11b94a78957283b2ef6e5269934fa586ae6a5a16980831d6dbe23935200",
+      "expected_target_hash": "7671e11b94a78957283b2ef6e5269934fa586ae6a5a16980831d6dbe23935200",
+      "actual_target_hash": "7671e11b94a78957283b2ef6e5269934fa586ae6a5a16980831d6dbe23935200",
+      "failure_reason": null,
+      "conflict_details": null,
+      "completed_at": "2026-06-09T19:33:00.468423",
+      "plan_snapshot_id": null
+    }
+  ],
+  "import_records": [
+    {
+      "import_id": "bcc3fd11",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\delivery_list\\delivery_manifest.csv",
+      "imported_at": "2026-06-09T19:32:59.803744",
+      "imported_count": 1,
+      "batch_name": "review-modified",
+      "items": [
+        {
+          "target_name": "A_MODPKG_0001.jpg",
+          "expected_hash": "7671e11b94a78957283b2ef6e5269934fa586ae6a5a16980831d6dbe23935200",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ],
+      "dry_run": false,
+      "conflict_summary": {
+        "target_name_conflicts": [],
+        "source_file_conflicts": [],
+        "batch_name_conflicts": []
+      },
+      "added_items": [
+        "A_MODPKG_0001.jpg"
+      ],
+      "skipped_items": [],
+      "conflicted_items": [],
+      "overwritten_items": []
+    },
+    {
+      "import_id": "bc35457a",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\delivery_list\\delivery_manifest.csv",
+      "imported_at": "2026-06-09T19:33:17.394160",
+      "imported_count": 1,
+      "batch_name": "review-modified",
+      "items": [
+        {
+          "target_name": "A_MODPKG_0001.jpg",
+          "expected_hash": "7671e11b94a78957283b2ef6e5269934fa586ae6a5a16980831d6dbe23935200",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ],
+      "dry_run": false,
+      "conflict_summary": {
+        "target_name_conflicts": [],
+        "source_file_conflicts": [],
+        "batch_name_conflicts": []
+      },
+      "added_items": [],
+      "skipped_items": [
+        "A_MODPKG_0001.jpg"
+      ],
+      "conflicted_items": [],
+      "overwritten_items": []
+    }
+  ],
+  "conflicts": [],
+  "apply_records": [
+    {
+      "apply_id": "8cc19d26",
+      "applied_at": "2026-06-09T19:33:00.468462",
+      "applied_count": 1,
+      "skipped_count": 0,
+      "failed_count": 0,
+      "remaining_count": 0,
+      "total_count": 1,
+      "applied_ids": [
+        "2077a885-8c6a-4eb9-b49c-2a5bfadc872c"
+      ],
+      "skipped_ids": [],
+      "failed_ids": [],
+      "limit": null,
+      "target_correction_id": null,
+      "hash_mismatch_count": 0
+    },
+    {
+      "apply_id": "d6f6cc05",
+      "applied_at": "2026-06-09T19:33:18.046534",
+      "applied_count": 0,
+      "skipped_count": 1,
+      "failed_count": 0,
+      "remaining_count": 0,
+      "total_count": 1,
+      "applied_ids": [],
+      "skipped_ids": [
+        "2077a885-8c6a-4eb9-b49c-2a5bfadc872c"
+      ],
+      "failed_ids": [],
+      "limit": null,
+      "target_correction_id": null,
+      "hash_mismatch_count": 0
+    }
+  ],
+  "undo_records": [],
+  "plan_snapshots": [],
+  "merge_status": "ok",
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\source_cards",
+  "last_scan_at": "2026-06-09T19:33:17.175180",
+  "last_import_at": "2026-06-09T19:33:17.394192",
+  "last_verify_at": "2026-06-09T19:33:17.613612",
+  "last_apply_at": "2026-06-09T19:33:18.046552",
+  "last_undo_at": null,
+  "last_plan_at": "2026-06-09T19:33:17.831802",
+  "active_snapshot_id": null,
+  "normalized_name": "review-modified"
+}

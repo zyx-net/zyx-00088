@@ -1,0 +1,48 @@
+{
+  "package_id": "8063d628",
+  "batch_id": "8dbad068",
+  "batch_name": "review-modified",
+  "target_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\delivery_package",
+  "status": "failed",
+  "created_at": "2026-06-09T19:33:00.689152",
+  "updated_at": "2026-06-09T19:33:00.690671",
+  "started_at": "2026-06-09T19:33:00.689377",
+  "completed_at": "2026-06-09T19:33:00.690665",
+  "total_files": 1,
+  "total_size": 26,
+  "copied_files": 0,
+  "copied_size": 0,
+  "skipped_files": 0,
+  "failed_files": 0,
+  "dry_run": false,
+  "items": [
+    {
+      "source_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\source_cards\\card_A\\A_MODPKG_0001.jpg",
+      "target_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\delivery_package\\photos\\A_MODPKG_0001.jpg",
+      "file_name": "A_MODPKG_0001.jpg",
+      "size": 26,
+      "hash": "7671e11b94a78957283b2ef6e5269934fa586ae6a5a16980831d6dbe23935200",
+      "camera": "A",
+      "status": "ok",
+      "copied": false,
+      "skip_reason": null
+    }
+  ],
+  "skipped_items": [],
+  "failed_items": [],
+  "input_batches": [
+    "8dbad068"
+  ],
+  "manifest_path": null,
+  "checksum_path": null,
+  "readme_path": null,
+  "package_structure": {
+    "photos": {
+      "description": "原始照片",
+      "count": 1,
+      "size": 26
+    }
+  },
+  "notes": null,
+  "error_message": "源文件已被篡改: D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_case_valid\\source_cards\\card_A\\A_MODPKG_0001.jpg，期望哈希: 7671e11b94a78957...，实际哈希: 101ec7d28262e189..."
+}

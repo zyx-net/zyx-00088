@@ -1,0 +1,52 @@
+{
+  "package_id": "3e2ded12",
+  "batch_id": "3893e648",
+  "batch_name": "review-valid",
+  "generated_at": "2026-06-09T19:32:19.556240",
+  "total_files": 3,
+  "total_size": 24,
+  "package_structure": {
+    "photos": {
+      "description": "原始照片",
+      "count": 3,
+      "size": 24
+    }
+  },
+  "input_batches": [
+    "3893e648"
+  ],
+  "notes": "reviewer valid success case",
+  "files": [
+    {
+      "file_name": "A_REVIEWOK_0001.jpg",
+      "size": 8,
+      "hash": "5e9cdfa7215d4e3c4509187323532a5033f7bc6dae8f6a3380a66ce828b17bc9",
+      "hash_algorithm": "sha256",
+      "camera": "A",
+      "source_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\success_case_valid\\source_cards\\card_A\\A_REVIEWOK_0001.jpg",
+      "target_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\success_case_valid\\delivery_package\\photos\\A_REVIEWOK_0001.jpg",
+      "copied": true
+    },
+    {
+      "file_name": "A_REVIEWOK_0002.jpg",
+      "size": 8,
+      "hash": "5e53a4f667e97c542f4e9c5c69b5f7b1e809d3f34a6cbd123b809f3edcbde2ea",
+      "hash_algorithm": "sha256",
+      "camera": "A",
+      "source_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\success_case_valid\\source_cards\\card_A\\A_REVIEWOK_0002.jpg",
+      "target_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\success_case_valid\\delivery_package\\photos\\A_REVIEWOK_0002.jpg",
+      "copied": true
+    },
+    {
+      "file_name": "B_REVIEWOK_0001.jpg",
+      "size": 8,
+      "hash": "025aeb78ef20774364b2577574a2a383d7888c23645127f2a10b29ef1a884a6a",
+      "hash_algorithm": "sha256",
+      "camera": "B",
+      "source_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\success_case_valid\\source_cards\\card_B\\B_REVIEWOK_0001.jpg",
+      "target_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\success_case_valid\\delivery_package\\photos\\B_REVIEWOK_0001.jpg",
+      "copied": true
+    }
+  ],
+  "skipped_files": []
+}

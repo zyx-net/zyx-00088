@@ -6,8 +6,16 @@ import sys
 import click
 
 from .config import Config
-from .storage import BatchStorage, ProfileStorage
-from .models import BatchNameConflictError, ProfileNameConflictError, Profile
+from .storage import BatchStorage, ProfileStorage, PackageStorage
+from .models import (
+    BatchNameConflictError,
+    ProfileNameConflictError,
+    Profile,
+    PackageTargetExistsError,
+    PackageFileConflictError,
+    PackageInsufficientSpaceError,
+    PackageSourceModifiedError,
+)
 from .commands.init_sample import generate_sample_data
 from .commands.scan import scan_directory
 from .commands.import_list import import_delivery_list
@@ -18,6 +26,11 @@ from .commands.undo import undo_corrections, has_undoable_operations
 from .commands.report import generate_report
 from .commands.status import get_batch_status
 from .commands.utils import get_or_create_batch
+from .commands.package import (
+    create_delivery_package,
+    list_packages,
+    show_package,
+)
 from .commands.profile import (
     save_profile,
     load_profile,
@@ -41,6 +54,10 @@ def _get_storage(config: Config) -> BatchStorage:
 
 def _get_profile_storage(config: Config) -> ProfileStorage:
     return ProfileStorage(config.work_dir)
+
+
+def _get_package_storage(config: Config) -> PackageStorage:
+    return PackageStorage(config.work_dir)
 
 
 def _print_json(data) -> None:
@@ -76,6 +93,10 @@ EXIT_CODES = {
     8: "批次名冲突（归一化后与现有批次冲突，需要人工处理）",
     9: "执行冲突（目标文件被外部修改或内容不匹配）",
     10: "Profile 名称冲突",
+    11: "打包目标目录已存在",
+    12: "打包文件冲突（目标目录存在同名文件且内容不匹配）",
+    13: "磁盘空间不足",
+    14: "源文件被篡改（打包时检测到哈希不一致）",
 }
 
 
@@ -95,12 +116,17 @@ def cli(ctx, config: str):
       7 - 合并冲突
       8 - 批次名冲突
       10 - Profile 名称冲突
+      11 - 打包目标目录已存在
+      12 - 打包文件冲突
+      13 - 磁盘空间不足
+      14 - 源文件被篡改
     """
     ctx.ensure_object(dict)
     cfg = _get_config(config)
     ctx.obj["config"] = cfg
     ctx.obj["storage"] = _get_storage(cfg)
     ctx.obj["profile_storage"] = _get_profile_storage(cfg)
+    ctx.obj["package_storage"] = _get_package_storage(cfg)
 
 
 @cli.command("init-sample")
@@ -715,6 +741,279 @@ def list_batches(ctx, output_json: bool):
                 click.echo(f"    文件: {b['file_count']}, 清单: {b['delivery_count']}, 修正: {b['correction_count']}")
                 click.echo(f"    更新于: {b['updated_at']}")
     sys.exit(0)
+
+
+@click.group()
+def package():
+    """交付包打包 - 生成可交付给客户的目录包"""
+    pass
+
+
+cli.add_command(package)
+
+
+@package.command("create")
+@click.argument("target_dir")
+@click.option("--batch-id", help="批次ID，不指定则使用最新批次")
+@click.option("--batch-name", help="按批次名称选择")
+@click.option("--notes", help="交付说明备注")
+@click.option("--include", multiple=True, help="仅包含指定文件名（可多次指定）")
+@click.option("--exclude", multiple=True, help="排除指定文件名（可多次指定）")
+@click.option("--camera", multiple=True, help="仅包含指定机位的照片（可多次指定）")
+@click.option("--dry-run", is_flag=True, help="预览模式，只显示将复制的文件和占用空间，不实际执行")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.option("--force", is_flag=True, help="强制覆盖已存在的目标目录（谨慎使用）")
+@click.option("--skip-conflicts", is_flag=True, help="跳过文件冲突项，继续打包其他文件")
+@click.pass_context
+def package_create(
+    ctx,
+    target_dir: str,
+    batch_id: Optional[str],
+    batch_name: Optional[str],
+    notes: str,
+    include: tuple,
+    exclude: tuple,
+    camera: tuple,
+    dry_run: bool,
+    output_json: bool,
+    force: bool,
+    skip_conflicts: bool,
+):
+    """创建交付包 - 按批次选择照片，生成固定目录结构和校验文件"""
+    config = ctx.obj["config"]
+    storage = ctx.obj["storage"]
+    package_storage = ctx.obj["package_storage"]
+
+    try:
+        result = create_delivery_package(
+            config=config,
+            storage=storage,
+            package_storage=package_storage,
+            target_dir=target_dir,
+            batch_id=batch_id,
+            batch_name=batch_name,
+            notes=notes,
+            include_filenames=list(include) if include else None,
+            exclude_filenames=list(exclude) if exclude else None,
+            include_cameras=list(camera) if camera else None,
+            dry_run=dry_run,
+            force=force,
+            skip_conflicts=skip_conflicts,
+        )
+        if output_json:
+            _print_json(result)
+        else:
+            if dry_run:
+                click.echo(f"[PREVIEW] 打包预览（未实际执行）")
+            else:
+                if result["status"] == "completed":
+                    click.echo(f"[OK] 打包完成")
+                elif result["status"] == "failed":
+                    click.echo(f"[FAIL] 打包失败")
+                else:
+                    click.echo(f"[WARN] 打包部分完成")
+
+            click.echo(f"  打包ID: {result['package_id']}")
+            click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
+            click.echo(f"  目标目录: {result['target_dir']}")
+            click.echo(f"  总计文件: {result['total_files']} 个")
+            click.echo(f"  总计大小: {_format_size(result['total_size'])}")
+            click.echo(f"  已复制: {result['copied_files']} 个 ({_format_size(result['copied_size'])})")
+            click.echo(f"  跳过: {result['skipped_files']} 个")
+            click.echo(f"  失败: {result['failed_files']} 个")
+
+            if result.get("manifest_path"):
+                click.echo(f"  清单文件: {result['manifest_path']}")
+            if result.get("checksum_path"):
+                click.echo(f"  校验文件: {result['checksum_path']}")
+            if result.get("readme_path"):
+                click.echo(f"  交付说明: {result['readme_path']}")
+
+            if result.get("items") and dry_run:
+                click.echo("\n将复制的文件:")
+                for item in result["items"][:20]:
+                    click.echo(f"  + {item['file_name']} ({_format_size(item['size'])})")
+                if len(result["items"]) > 20:
+                    click.echo(f"  ... 还有 {len(result['items']) - 20} 个文件")
+
+            if result.get("skipped_items"):
+                click.echo("\n跳过的文件:")
+                for item in result["skipped_items"]:
+                    reason = item.get("skip_reason", "未知原因")
+                    click.echo(f"  - {item['file_name']}: {reason}")
+
+            if result.get("failed_items"):
+                click.echo("\n失败的文件:")
+                for fail in result["failed_items"]:
+                    click.echo(f"  ! {fail.get('file_name', '未知文件')}: {fail.get('error', '未知错误')}")
+
+            if dry_run:
+                click.echo("\n提示: 去掉 --dry-run 即可实际执行打包")
+
+        if result["status"] == "failed":
+            sys.exit(1)
+        if result["failed_files"] > 0 and not skip_conflicts:
+            sys.exit(1)
+        sys.exit(0)
+    except PackageTargetExistsError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] {e}", err=True)
+            click.echo("\n提示: 使用 --force 可强制覆盖（谨慎使用）", err=True)
+        sys.exit(11)
+    except PackageFileConflictError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] {e}", err=True)
+            click.echo("\n提示: 使用 --skip-conflicts 可跳过冲突项继续打包", err=True)
+        sys.exit(12)
+    except PackageInsufficientSpaceError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] {e}", err=True)
+            click.echo(f"  需要: {_format_size(e.required)}", err=True)
+            click.echo(f"  可用: {_format_size(e.available)}", err=True)
+            click.echo(f"  缺少: {_format_size(e.required - e.available)}", err=True)
+        sys.exit(13)
+    except PackageSourceModifiedError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] {e}", err=True)
+        sys.exit(14)
+    except Exception as e:
+        click.echo(f"[FAIL] 打包失败: {e}", err=True)
+        sys.exit(1)
+
+
+@package.command("list")
+@click.option("--batch-id", help="按批次ID筛选")
+@click.option("--status", help="按状态筛选 (pending/in_progress/completed/failed/dry_run)")
+@click.option("--limit", type=int, default=20, help="显示最近的 N 条记录")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.pass_context
+def package_list(ctx, batch_id: Optional[str], status: Optional[str], limit: int, output_json: bool):
+    """查询打包历史记录（跨进程重启后仍可查看）"""
+    package_storage = ctx.obj["package_storage"]
+
+    try:
+        result = list_packages(package_storage, batch_id, status, limit)
+        if output_json:
+            _print_json(result)
+        else:
+            if result["count"] == 0:
+                click.echo("(没有打包记录)")
+            else:
+                click.echo(f"共 {result['count']} 条打包记录（最近 {limit} 条）:")
+                for pkg in result["packages"]:
+                    status_icon = {
+                        "pending": "[·]",
+                        "in_progress": "[→]",
+                        "completed": "[✓]",
+                        "failed": "[✗]",
+                        "cancelled": "[×]",
+                        "dry_run": "[P]",
+                    }.get(pkg["status"], "[?]")
+                    dry_run_marker = " (预览)" if pkg.get("dry_run") else ""
+                    click.echo(f"  {status_icon} {pkg['package_id']} - {pkg['batch_name']}{dry_run_marker}")
+                    click.echo(f"      目标: {pkg['target_dir']}")
+                    click.echo(f"      状态: {pkg['status']}, 文件: {pkg['total_files']}, 大小: {_format_size(pkg['total_size'])}")
+                    click.echo(f"      创建: {pkg['created_at']}")
+                    if pkg.get("error_message"):
+                        click.echo(f"      错误: {pkg['error_message']}")
+        sys.exit(0)
+    except Exception as e:
+        click.echo(f"[FAIL] 查询失败: {e}", err=True)
+        sys.exit(1)
+
+
+@package.command("show")
+@click.argument("package_id")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.option("--files", is_flag=True, help="显示文件列表")
+@click.pass_context
+def package_show(ctx, package_id: str, output_json: bool, files: bool):
+    """查看打包详情"""
+    package_storage = ctx.obj["package_storage"]
+
+    try:
+        result = show_package(package_storage, package_id)
+        if output_json:
+            _print_json(result)
+        else:
+            click.echo(f"[OK] 打包详情")
+            click.echo(f"  打包ID: {result['package_id']}")
+            click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
+            click.echo(f"  目标目录: {result['target_dir']}")
+            click.echo(f"  状态: {result['status']}")
+            click.echo(f"  创建时间: {result['created_at']}")
+            if result.get("started_at"):
+                click.echo(f"  开始时间: {result['started_at']}")
+            if result.get("completed_at"):
+                click.echo(f"  完成时间: {result['completed_at']}")
+            click.echo(f"  总计文件: {result['total_files']} 个")
+            click.echo(f"  总计大小: {_format_size(result['total_size'])}")
+            click.echo(f"  已复制: {result['copied_files']} 个 ({_format_size(result['copied_size'])})")
+            click.echo(f"  跳过: {result['skipped_files']} 个")
+            click.echo(f"  失败: {result['failed_files']} 个")
+
+            if result.get("notes"):
+                click.echo(f"  备注: {result['notes']}")
+            if result.get("manifest_path"):
+                click.echo(f"  清单文件: {result['manifest_path']}")
+            if result.get("checksum_path"):
+                click.echo(f"  校验文件: {result['checksum_path']}")
+            if result.get("readme_path"):
+                click.echo(f"  交付说明: {result['readme_path']}")
+            if result.get("error_message"):
+                click.echo(f"  错误: {result['error_message']}")
+
+            if files:
+                if result.get("items"):
+                    click.echo(f"\n打包文件 ({len(result['items'])} 个):")
+                    for item in result["items"]:
+                        status = "[✓]" if item.get("copied") else "[·]"
+                        click.echo(f"  {status} {item['file_name']} ({_format_size(item['size'])})")
+                        click.echo(f"      源: {item['source_path']}")
+                        click.echo(f"      目标: {item['target_path']}")
+                        click.echo(f"      哈希: {item['hash'][:16]}...")
+
+                if result.get("skipped_items"):
+                    click.echo(f"\n跳过文件 ({len(result['skipped_items'])} 个):")
+                    for item in result["skipped_items"]:
+                        reason = item.get("skip_reason", "未知原因")
+                        click.echo(f"  [SKIP] {item['file_name']}: {reason}")
+
+                if result.get("failed_items"):
+                    click.echo(f"\n失败文件 ({len(result['failed_items'])} 个):")
+                    for fail in result["failed_items"]:
+                        click.echo(f"  [FAIL] {fail.get('file_name', '未知文件')}: {fail.get('error', '未知错误')}")
+
+        sys.exit(0)
+    except ValueError as e:
+        if output_json:
+            _print_json({"error": str(e)})
+        else:
+            click.echo(f"[FAIL] {e}", err=True)
+        sys.exit(1)
+    except Exception as e:
+        click.echo(f"[FAIL] 查询失败: {e}", err=True)
+        sys.exit(1)
+
+
+def _format_size(size_bytes: int) -> str:
+    """格式化文件大小为可读字符串"""
+    if size_bytes < 1024:
+        return f"{size_bytes} B"
+    elif size_bytes < 1024 * 1024:
+        return f"{size_bytes / 1024:.1f} KB"
+    elif size_bytes < 1024 * 1024 * 1024:
+        return f"{size_bytes / (1024 * 1024):.1f} MB"
+    else:
+        return f"{size_bytes / (1024 * 1024 * 1024):.1f} GB"
 
 
 @click.group()

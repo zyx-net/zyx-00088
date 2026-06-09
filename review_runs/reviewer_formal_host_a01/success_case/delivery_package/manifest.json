@@ -1,0 +1,32 @@
+{
+  "package_id": "79e84767",
+  "batch_id": "5e3364bc",
+  "batch_name": "review-package",
+  "generated_at": "2026-06-09T19:31:21.859961",
+  "total_files": 1,
+  "total_size": 11,
+  "package_structure": {
+    "photos": {
+      "description": "原始照片",
+      "count": 1,
+      "size": 11
+    }
+  },
+  "input_batches": [
+    "5e3364bc"
+  ],
+  "notes": "reviewer owned success case",
+  "files": [
+    {
+      "file_name": "A_REVIEWPKG_0002.jpg",
+      "size": 11,
+      "hash": "b4dc14f9368491f0980c37793318e32b97bcf3f8b2bf60b261054235bd8ba00b",
+      "hash_algorithm": "sha256",
+      "camera": null,
+      "source_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\success_case\\source_cards\\card_A\\IMG_A2.jpg",
+      "target_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\success_case\\delivery_package\\photos\\A_REVIEWPKG_0002.jpg",
+      "copied": true
+    }
+  ],
+  "skipped_files": []
+}

@@ -1,0 +1,22 @@
+[
+  {
+    "package_id": "50f39eb8",
+    "batch_id": "1149361a",
+    "batch_name": "review-srcmod",
+    "target_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_after_apply\\delivery_package",
+    "status": "failed",
+    "created_at": "2026-06-09T19:33:54.301540",
+    "updated_at": "2026-06-09T19:33:54.302858",
+    "started_at": "2026-06-09T19:33:54.301715",
+    "completed_at": "2026-06-09T19:33:54.302853",
+    "total_files": 1,
+    "total_size": 21,
+    "copied_files": 0,
+    "copied_size": 0,
+    "skipped_files": 0,
+    "failed_files": 0,
+    "dry_run": false,
+    "notes": null,
+    "error_message": "源文件已被篡改: D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_host_a01\\source_modified_after_apply\\source_cards\\card_A\\A_SRCMOD_0001.jpg，期望哈希: ca40c6b9a345a4f3...，实际哈希: 7904344e347e14aa..."
+  }
+]
