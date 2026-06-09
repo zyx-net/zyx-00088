@@ -5,6 +5,7 @@ import shutil
 
 from ..config import Config
 from ..models import BatchHistory, CorrectionAction, CorrectionType
+from ..scanner import FileScanner
 from ..storage import BatchStorage
 from .utils import get_or_create_batch
 
@@ -16,6 +17,8 @@ def apply_corrections(
     correction_id: Optional[str] = None,
     limit: Optional[int] = None,
 ) -> Dict:
+    from ..models import FileStatus
+
     batch, _ = get_or_create_batch(storage, batch_id)
 
     if not batch.corrections:
@@ -31,8 +34,11 @@ def apply_corrections(
     if limit and limit > 0:
         pending = pending[:limit]
 
+    scanner = FileScanner(config)
+
     applied: List[CorrectionAction] = []
     failed: List[Dict] = []
+    hash_mismatches: List[Dict] = []
 
     for correction in pending:
         try:
@@ -41,16 +47,40 @@ def apply_corrections(
                 target = Path(correction.target)
                 target.parent.mkdir(parents=True, exist_ok=True)
 
+                if not source.exists():
+                    raise FileNotFoundError(f"源文件不存在: {correction.source}")
+
+                source_str = str(source.resolve())
+                expected_hash = None
+                if source_str in batch.scanned_files:
+                    expected_hash = batch.scanned_files[source_str].hash
+
+                current_hash = scanner.calculate_hash(source)
+
+                if expected_hash and expected_hash != current_hash:
+                    mismatch_info = {
+                        "correction_id": correction.id,
+                        "source_path": source_str,
+                        "expected_hash": expected_hash,
+                        "actual_hash": current_hash,
+                        "target": str(target),
+                    }
+                    hash_mismatches.append(mismatch_info)
+                    failed.append({
+                        "correction_id": correction.id,
+                        "error": f"哈希不一致: 扫描后文件已被篡改，源: {source_str}",
+                    })
+
+                    for item in batch.delivery_list.values():
+                        if item.matched_source == source_str:
+                            item.status = FileStatus.HASH_MISMATCH
+                            item.actual_hash = current_hash
+                    continue
+
                 if correction.type == CorrectionType.COPY:
-                    if source.exists():
-                        shutil.copy2(source, target)
-                    else:
-                        raise FileNotFoundError(f"源文件不存在: {correction.source}")
+                    shutil.copy2(source, target)
                 else:
-                    if source.exists():
-                        shutil.move(source, target)
-                    else:
-                        raise FileNotFoundError(f"源文件不存在: {correction.source}")
+                    shutil.move(source, target)
 
             elif correction.type == CorrectionType.DELETE:
                 target = Path(correction.target)
@@ -74,8 +104,10 @@ def apply_corrections(
         "batch_name": batch.name,
         "applied_count": len(applied),
         "failed_count": len(failed),
+        "hash_mismatch_count": len(hash_mismatches),
         "applied": [c.to_dict() for c in applied],
         "failed": failed,
+        "hash_mismatches": hash_mismatches,
     }
 
 

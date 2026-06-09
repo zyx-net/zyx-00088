@@ -39,12 +39,38 @@ def verify_batch(
     for sf in batch.scanned_files.values():
         name_to_sources[sf.file_name].append(sf)
 
+    def _find_matching_sources(target_name: str) -> List[ScannedFile]:
+        exact_match = name_to_sources.get(target_name, [])
+        if exact_match:
+            return exact_match
+
+        target_fields = scanner.extract_fields(target_name)
+        target_cam = target_fields.get("机位")
+        target_seq = target_fields.get("序号")
+        target_ext = target_fields.get("扩展名")
+
+        field_matches: List[ScannedFile] = []
+        for sf in batch.scanned_files.values():
+            sf_fields = scanner.extract_fields(sf.file_name)
+            sf_cam = sf_fields.get("机位")
+            sf_seq = sf_fields.get("序号")
+            sf_ext = sf_fields.get("扩展名")
+
+            cam_match = (target_cam is None or sf_cam is None or target_cam == sf_cam)
+            seq_match = (target_seq is None or sf_seq is None or target_seq == sf_seq)
+            ext_match = (target_ext is None or sf_ext is None or target_ext == sf_ext)
+
+            if cam_match and seq_match and ext_match:
+                field_matches.append(sf)
+
+        return field_matches
+
     for item in batch.delivery_list.values():
         item.status = FileStatus.UNKNOWN
         item.matched_source = None
         item.actual_hash = None
 
-        matching_by_name = name_to_sources.get(item.target_name, [])
+        matching_by_name = _find_matching_sources(item.target_name)
 
         if not matching_by_name:
             item.status = FileStatus.MISSING

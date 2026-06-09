@@ -1,0 +1,3 @@
+target_name,expected_hash,camera,sequence
+A_MISSCASE_0001.jpg,,A,1
+A_MISSCASE_0002.jpg,,A,2

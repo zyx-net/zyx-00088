@@ -30,11 +30,31 @@ def _print_json(data) -> None:
     click.echo(json.dumps(data, ensure_ascii=False, indent=2))
 
 
+EXIT_CODES = {
+    0: "成功",
+    1: "通用错误（命令执行失败）",
+    2: "清单错误（损坏或包含重复文件名）",
+    3: "哈希不一致（扫描后文件被篡改或期望哈希不匹配）",
+    4: "重复文件名（源目录或清单中存在重复）",
+    5: "缺片（清单中存在但源目录中缺失的文件）",
+    6: "没有可撤销的操作",
+}
+
+
 @click.group()
 @click.option("--config", "-c", default="./config.yaml", help="配置文件路径")
 @click.pass_context
 def cli(ctx, config: str):
-    """多命令离线相册归档校验 CLI 工具"""
+    """多命令离线相册归档校验 CLI 工具
+
+    非零退出码说明:
+      1 - 通用错误
+      2 - 清单损坏或重复文件名
+      3 - 哈希不一致
+      4 - 存在重复文件名
+      5 - 存在缺片
+      6 - 没有可撤销的操作
+    """
     ctx.ensure_object(dict)
     cfg = _get_config(config)
     ctx.obj["config"] = cfg
@@ -217,10 +237,20 @@ def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Opt
             click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
             click.echo(f"  成功应用: {result['applied_count']} 个")
             click.echo(f"  失败: {result['failed_count']} 个")
+            if result.get("hash_mismatch_count", 0) > 0:
+                click.echo(f"  哈希不一致: {result['hash_mismatch_count']} 个")
             for corr in result["applied"]:
                 click.echo(f"  [OK] [{corr['type']}] {corr['target']}")
             for fail in result["failed"]:
                 click.echo(f"  [FAIL] [{fail['correction_id']}] {fail['error']}")
+            for hm in result.get("hash_mismatches", []):
+                click.echo(f"  [HASH_MISMATCH] {hm['source_path']}")
+                click.echo(f"    期望: {hm['expected_hash']}")
+                click.echo(f"    实际: {hm['actual_hash']}")
+        if result.get("hash_mismatch_count", 0) > 0:
+            sys.exit(3)
+        if result["failed_count"] > 0:
+            sys.exit(1)
         sys.exit(0)
     except Exception as e:
         click.echo(f"[FAIL] 应用失败: {e}", err=True)
@@ -321,6 +351,15 @@ def list_batches(ctx, output_json: bool):
                 click.echo(f"  {b['batch_id']} - {b['name']}")
                 click.echo(f"    文件: {b['file_count']}, 清单: {b['delivery_count']}, 修正: {b['correction_count']}")
                 click.echo(f"    更新于: {b['updated_at']}")
+    sys.exit(0)
+
+
+@cli.command("help-exit-codes")
+def help_exit_codes():
+    """显示非零退出码说明"""
+    click.echo("非零退出码说明:")
+    for code in sorted(EXIT_CODES.keys()):
+        click.echo(f"  {code} - {EXIT_CODES[code]}")
     sys.exit(0)
 
 

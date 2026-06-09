@@ -1,0 +1,7 @@
+﻿naming_rule: "{鏈轰綅}_{鎵规}_{搴忓彿:04d}.{鎵╁睍鍚峿"
+cameras:
+  - A
+hash_strategy: sha256
+archive_dir: D:/workSpace/AI__SPACE/zyx-00088/review_runs/reviewer_missing_case/archive
+work_dir: D:/workSpace/AI__SPACE/zyx-00088/review_runs/reviewer_missing_case/work
+

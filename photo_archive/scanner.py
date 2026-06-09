@@ -1,6 +1,7 @@
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 import hashlib
+import re
 
 from .config import Config
 from .models import ScannedFile
@@ -85,3 +86,77 @@ class FileScanner:
             序号=sequence,
             扩展名=extension,
         )
+
+    def _build_naming_pattern(self) -> Tuple[re.Pattern, List[str]]:
+        rule = self.config.naming_rule
+        fields = []
+        pattern = rule
+
+        pattern = pattern.replace(".", r"\.")
+
+        def replace_field(match):
+            field_expr = match.group(1)
+            parts = field_expr.split(":")
+            field_name = parts[0]
+            fields.append(field_name)
+            if field_name == "序号":
+                return r"(\d+)"
+            elif field_name == "机位":
+                return r"([A-Za-z0-9]+)"
+            elif field_name == "批次":
+                return r"([A-Za-z0-9_]+)"
+            elif field_name == "扩展名":
+                return r"([a-z0-9]+)"
+            else:
+                return r"(.+?)"
+
+        pattern = re.sub(r"\{([^}]+)\}", replace_field, pattern)
+        return re.compile(f"^{pattern}$", re.IGNORECASE), fields
+
+    def parse_filename(self, file_name: str) -> Optional[Dict[str, str]]:
+        pattern, fields = self._build_naming_pattern()
+        match = pattern.match(file_name)
+        if not match:
+            return None
+
+        result = {}
+        for i, field in enumerate(fields):
+            result[field] = match.group(i + 1)
+
+        if "序号" in result:
+            try:
+                result["序号"] = int(result["序号"])
+            except (ValueError, TypeError):
+                pass
+
+        return result
+
+    def extract_sequence(self, file_name: str) -> Optional[int]:
+        parsed = self.parse_filename(file_name)
+        if parsed and "序号" in parsed:
+            seq = parsed["序号"]
+            return int(seq) if isinstance(seq, str) else seq
+
+        numbers = re.findall(r"\d+", file_name.replace(".", "_"))
+        if numbers:
+            return int(numbers[-1])
+        return None
+
+    def extract_fields(self, file_name: str) -> Dict[str, Optional[str]]:
+        result = {
+            "机位": self.detect_camera(file_name),
+            "批次": self.detect_batch(file_name),
+            "序号": None,
+            "扩展名": Path(file_name).suffix.lower().lstrip("."),
+        }
+
+        parsed = self.parse_filename(file_name)
+        if parsed:
+            for key, value in parsed.items():
+                if key in result and value is not None:
+                    result[key] = str(value) if not isinstance(value, int) else value
+
+        if result["序号"] is None:
+            result["序号"] = self.extract_sequence(file_name)
+
+        return result
