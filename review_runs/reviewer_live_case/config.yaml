@@ -1,0 +1,6 @@
+naming_rule: "{??}_{??}_{??:04d}.{???}"
+cameras:
+  - A
+hash_strategy: sha256
+archive_dir: D:\workSpace\AI__SPACE\zyx-00088\review_runs\reviewer_live_case\archive
+work_dir: D:\workSpace\AI__SPACE\zyx-00088\review_runs\reviewer_live_case\work

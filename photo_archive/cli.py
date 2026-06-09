@@ -290,9 +290,16 @@ def plan(ctx, batch_id: Optional[str], output_json: bool):
             click.echo(f"[OK] 修正计划已生成")
             click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
             click.echo(f"  归档目录: {result['archive_dir']}")
-            click.echo(f"  修正项: {result['correction_count']} 个")
+            click.echo(f"  总修正项: {result['correction_count']} 个")
+            click.echo(f"  已应用: {result.get('applied_count', 0)} 个")
+            click.echo(f"  待应用: {result.get('pending_count', result['correction_count'])} 个")
             for i, corr in enumerate(result["corrections"], 1):
-                click.echo(f"  {i}. [{corr['type']}] {corr['reason']}")
+                status = ""
+                if corr.get("applied") and not corr.get("rolled_back"):
+                    status = " [已应用]"
+                elif corr.get("rolled_back"):
+                    status = " [已撤销]"
+                click.echo(f"  {i}. [{corr['type']}] {corr['reason']}{status}")
                 if corr["source"]:
                     click.echo(f"     源: {corr['source']}")
                 click.echo(f"     目标: {corr['target']}")
@@ -331,12 +338,24 @@ def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Opt
         else:
             click.echo(f"[OK] 修正应用完成")
             click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
-            click.echo(f"  成功应用: {result['applied_count']} 个")
-            click.echo(f"  失败: {result['failed_count']} 个")
+            click.echo(f"  批次执行ID: {result.get('apply_id', 'N/A')}")
+            click.echo(f"  总计: {result['total_count']} 个")
+            click.echo(f"  本次应用: {result['applied_count']} 个")
+            click.echo(f"  本次跳过: {result['skipped_count']} 个")
+            click.echo(f"  本次失败: {result['failed_count']} 个")
+            click.echo(f"  剩余未应用: {result['remaining_count']} 个")
             if result.get("hash_mismatch_count", 0) > 0:
                 click.echo(f"  哈希不一致: {result['hash_mismatch_count']} 个")
+
+            if result.get('limit'):
+                click.echo(f"  限制数量: {result['limit']}")
+            if result.get('target_correction_id'):
+                click.echo(f"  指定修正ID: {result['target_correction_id']}")
+
             for corr in result["applied"]:
-                click.echo(f"  [OK] [{corr['type']}] {corr['target']}")
+                click.echo(f"  [OK] [{corr['type']}] {corr['target']} (ID: {corr['id']})")
+            for corr in result.get("skipped", []):
+                click.echo(f"  [SKIP] [{corr['type']}] {corr['target']} (ID: {corr['id']} - 已应用)")
             for fail in result["failed"]:
                 click.echo(f"  [FAIL] [{fail['correction_id']}] {fail['error']}")
             for hm in result.get("hash_mismatches", []):
@@ -386,10 +405,17 @@ def undo(ctx, batch_id: Optional[str], correction_id: Optional[str], output_json
         else:
             click.echo(f"[OK] 撤销完成")
             click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
-            click.echo(f"  已撤销: {result['undone_count']} 个")
+            click.echo(f"  撤销执行ID: {result.get('undo_id', 'N/A')}")
+            click.echo(f"  撤销前已应用: {result['total_applied_before']} 个")
+            click.echo(f"  本次撤销: {result['undone_count']} 个")
             click.echo(f"  失败: {result['failed_count']} 个")
+            click.echo(f"  剩余已应用: {result['remaining_applied_after']} 个")
+            if result.get('target_correction_id'):
+                click.echo(f"  指定修正ID: {result['target_correction_id']}")
             for corr in result["undone"]:
-                click.echo(f"  [UNDO] [{corr['type']}] {corr['target']}")
+                click.echo(f"  [UNDO] [{corr['type']}] {corr['target']} (ID: {corr['id']})")
+            for fail in result["failed"]:
+                click.echo(f"  [FAIL] [{fail['correction_id']}] {fail['error']}")
         sys.exit(0)
     except SystemExit:
         raise

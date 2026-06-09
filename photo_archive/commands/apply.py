@@ -2,9 +2,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 import shutil
+import uuid
 
 from ..config import Config
-from ..models import BatchHistory, CorrectionAction, CorrectionType
+from ..models import ApplyRecord, BatchHistory, CorrectionAction, CorrectionType
 from ..scanner import FileScanner
 from ..storage import BatchStorage
 from .utils import get_or_create_batch
@@ -24,12 +25,27 @@ def apply_corrections(
     if not batch.corrections:
         raise ValueError("没有可应用的修正计划，请先生成修正计划")
 
-    pending = [c for c in batch.corrections if not c.applied and not c.rolled_back]
+    all_corrections = batch.corrections
+    total_count = len(all_corrections)
+
+    pending = [c for c in all_corrections if not c.applied and not c.rolled_back]
+    applied_before = [c for c in all_corrections if c.applied and not c.rolled_back]
+    skipped = []
 
     if correction_id:
-        pending = [c for c in pending if c.id == correction_id]
-        if not pending:
-            raise ValueError(f"找不到未应用的修正: {correction_id}")
+        target_correction = next((c for c in pending if c.id == correction_id), None)
+        if not target_correction:
+            already_applied = next((c for c in all_corrections if c.id == correction_id), None)
+            if already_applied:
+                if already_applied.applied and not already_applied.rolled_back:
+                    skipped.append(already_applied)
+                    pending = []
+                elif already_applied.rolled_back:
+                    raise ValueError(f"修正 {correction_id} 已被撤销，如需重新应用请先生成新计划")
+            else:
+                raise ValueError(f"找不到修正: {correction_id}")
+        else:
+            pending = [target_correction]
 
     if limit and limit > 0:
         pending = pending[:limit]
@@ -39,6 +55,9 @@ def apply_corrections(
     applied: List[CorrectionAction] = []
     failed: List[Dict] = []
     hash_mismatches: List[Dict] = []
+    applied_ids: List[str] = []
+    failed_ids: List[str] = []
+    skipped_ids = [c.id for c in skipped]
 
     for correction in pending:
         try:
@@ -70,6 +89,7 @@ def apply_corrections(
                         "correction_id": correction.id,
                         "error": f"哈希不一致: 扫描后文件已被篡改，源: {source_str}",
                     })
+                    failed_ids.append(correction.id)
 
                     for item in batch.delivery_list.values():
                         if item.matched_source == source_str:
@@ -87,27 +107,65 @@ def apply_corrections(
                 if target.exists():
                     target.unlink()
 
+            elif correction.type == CorrectionType.SKIP:
+                pass
+
             correction.applied = True
             correction.applied_at = datetime.now()
             applied.append(correction)
+            applied_ids.append(correction.id)
 
         except Exception as e:
             failed.append({
                 "correction_id": correction.id,
                 "error": str(e),
             })
+            failed_ids.append(correction.id)
+
+    remaining = [c for c in all_corrections if not c.applied and not c.rolled_back and c.id not in failed_ids]
+    remaining_count = len(remaining)
+    skipped_count = len(skipped)
+
+    apply_record = ApplyRecord(
+        apply_id=str(uuid.uuid4())[:8],
+        applied_at=datetime.now(),
+        applied_count=len(applied),
+        skipped_count=skipped_count,
+        failed_count=len(failed),
+        remaining_count=remaining_count,
+        total_count=total_count,
+        applied_ids=applied_ids,
+        skipped_ids=skipped_ids,
+        failed_ids=failed_ids,
+        limit=limit,
+        target_correction_id=correction_id,
+        hash_mismatch_count=len(hash_mismatches),
+    )
+
+    batch.apply_records.append(apply_record)
+    batch.last_apply_at = datetime.now()
 
     storage.save(batch)
 
     return {
         "batch_id": batch.batch_id,
         "batch_name": batch.name,
+        "apply_id": apply_record.apply_id,
         "applied_count": len(applied),
+        "skipped_count": skipped_count,
         "failed_count": len(failed),
+        "remaining_count": remaining_count,
+        "total_count": total_count,
         "hash_mismatch_count": len(hash_mismatches),
         "applied": [c.to_dict() for c in applied],
+        "skipped": [c.to_dict() for c in skipped],
         "failed": failed,
         "hash_mismatches": hash_mismatches,
+        "applied_ids": applied_ids,
+        "skipped_ids": skipped_ids,
+        "failed_ids": failed_ids,
+        "limit": limit,
+        "target_correction_id": correction_id,
     }
 
 

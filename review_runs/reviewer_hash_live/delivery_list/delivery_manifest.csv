@@ -1,0 +1,3 @@
+target_name,expected_hash,camera,sequence
+A_HASHLIVE_0001.jpg,5b8c4aafea7f87bfbfa1f2ad033425292f5a7f0ab91ea0882ced9a9664f5cc19,A,1
+A_HASHLIVE_0002.jpg,3c52d4afb1e91df0ebd460cb77637847ac6a47a8a3ba3edbd4ebecefb40b5e8e,A,2

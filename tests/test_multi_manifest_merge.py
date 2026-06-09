@@ -1329,3 +1329,643 @@ def test_import_list_dry_run_preserves_state_across_restart():
     assert len(state_before["import_records"]) == len(state_after["import_records"])
     assert state_before["import_records"] == state_after["import_records"]
 
+
+def test_stepwise_apply_with_limit_and_restart():
+    """测试分步 apply：使用 --limit 分批应用，跨进程重启后继续"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+
+    f1 = create_source_file(source_dir, "IMG_0001.jpg", b"photo1content")
+    f2 = create_source_file(source_dir, "IMG_0002.jpg", b"photo2content")
+    f3 = create_source_file(source_dir, "IMG_0003.jpg", b"photo3content")
+    f4 = create_source_file(source_dir, "IMG_0004.jpg", b"photo4content")
+    hash1 = get_file_hash(f1)
+    hash2 = get_file_hash(f2)
+    hash3 = get_file_hash(f3)
+    hash4 = get_file_hash(f4)
+
+    manifest_dir = SAMPLE_DIR / "delivery_list"
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest = manifest_dir / "m1.csv"
+    with open(manifest, "w", encoding="utf-8") as f:
+        f.write("target_name,expected_hash,camera,sequence\n")
+        f.write(f"A_STEP001_0001.jpg,{hash1},A,1\n")
+        f.write(f"A_STEP001_0002.jpg,{hash2},A,2\n")
+        f.write(f"A_STEP001_0003.jpg,{hash3},A,3\n")
+        f.write(f"A_STEP001_0004.jpg,{hash4},A,4\n")
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "stepwise-test",
+        "--json",
+    ])
+    assert result.returncode == 0
+    batch_id = json.loads(result.stdout)["batch_id"]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "import-list", str(manifest),
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "verify",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode in [0, 3, 4, 5]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "plan",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    plan_data = json.loads(result.stdout)
+    total_corrections = plan_data["correction_count"]
+    assert total_corrections == 4
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--limit", "2",
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply1_data = json.loads(result.stdout)
+    assert apply1_data["applied_count"] == 2
+    assert apply1_data["skipped_count"] == 0
+    assert apply1_data["failed_count"] == 0
+    assert apply1_data["remaining_count"] == 2
+    assert apply1_data["total_count"] == 4
+    assert apply1_data["limit"] == 2
+    assert "apply_id" in apply1_data
+    applied_ids_1 = set(apply1_data["applied_ids"])
+    assert len(applied_ids_1) == 2
+
+    archive_dir = ARCHIVE_DIR / "stepwise-test"
+    archived_files = list(archive_dir.glob("*.jpg"))
+    assert len(archived_files) == 2, f"应有2个文件被归档，实际有{len(archived_files)}个"
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "report",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    report1 = json.loads(result.stdout)
+    assert report1["summary"]["active_corrections_count"] == 2
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply2_data = json.loads(result.stdout)
+    assert apply2_data["applied_count"] == 2
+    assert apply2_data["remaining_count"] == 0
+    assert apply2_data["total_count"] == 4
+
+    archived_files = list(archive_dir.glob("*.jpg"))
+    assert len(archived_files) == 4, f"应有4个文件被归档，实际有{len(archived_files)}个"
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "report",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    report2 = json.loads(result.stdout)
+    assert report2["summary"]["active_corrections_count"] == 4
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply3_data = json.loads(result.stdout)
+    assert apply3_data["applied_count"] == 0
+    assert apply3_data["skipped_count"] == 0
+    assert apply3_data["remaining_count"] == 0
+
+
+def test_apply_specific_correction_id_with_conflict():
+    """测试指定 correction-id 应用：已应用的修正应被跳过，未应用的正常应用"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+
+    f1 = create_source_file(source_dir, "IMG_0001.jpg", b"photo1content")
+    f2 = create_source_file(source_dir, "IMG_0002.jpg", b"photo2content")
+    hash1 = get_file_hash(f1)
+    hash2 = get_file_hash(f2)
+
+    manifest_dir = SAMPLE_DIR / "delivery_list"
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest = manifest_dir / "m1.csv"
+    with open(manifest, "w", encoding="utf-8") as f:
+        f.write("target_name,expected_hash,camera,sequence\n")
+        f.write(f"A_CONFLICT01_0001.jpg,{hash1},A,1\n")
+        f.write(f"A_CONFLICT01_0002.jpg,{hash2},A,2\n")
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "conflict-test",
+        "--json",
+    ])
+    assert result.returncode == 0
+    batch_id = json.loads(result.stdout)["batch_id"]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "import-list", str(manifest),
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "verify",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode in [0, 3, 4, 5]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "plan",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    plan_data = json.loads(result.stdout)
+    corrections = plan_data["corrections"]
+    assert len(corrections) == 2
+    corr_id_1 = corrections[0]["id"]
+    corr_id_2 = corrections[1]["id"]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--correction-id", corr_id_1,
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply1_data = json.loads(result.stdout)
+    assert apply1_data["applied_count"] == 1
+    assert apply1_data["target_correction_id"] == corr_id_1
+    assert apply1_data["remaining_count"] == 1
+
+    archive_dir = ARCHIVE_DIR / "conflict-test"
+    archived_files = list(archive_dir.glob("*.jpg"))
+    assert len(archived_files) == 1
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--correction-id", corr_id_1,
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply2_data = json.loads(result.stdout)
+    assert apply2_data["applied_count"] == 0
+    assert apply2_data["skipped_count"] == 1
+    assert apply2_data["remaining_count"] == 1
+    assert corr_id_1 in apply2_data["skipped_ids"]
+
+    archived_files = list(archive_dir.glob("*.jpg"))
+    assert len(archived_files) == 1, "重复应用不应重复复制文件"
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--correction-id", corr_id_2,
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply3_data = json.loads(result.stdout)
+    assert apply3_data["applied_count"] == 1
+    assert apply3_data["skipped_count"] == 0
+    assert apply3_data["remaining_count"] == 0
+
+    archived_files = list(archive_dir.glob("*.jpg"))
+    assert len(archived_files) == 2
+
+    invalid_id = "non-existent-id-12345"
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--correction-id", invalid_id,
+        "--json",
+    ])
+    assert result.returncode == 1
+    assert "找不到修正" in result.stderr or "not found" in result.stderr.lower()
+
+
+def test_undo_specific_correction_and_report_consistency():
+    """测试撤销单条修正：撤销后报告和归档文件应一致，历史状态正确恢复"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+
+    f1 = create_source_file(source_dir, "IMG_0001.jpg", b"photo1content")
+    f2 = create_source_file(source_dir, "IMG_0002.jpg", b"photo2content")
+    f3 = create_source_file(source_dir, "IMG_0003.jpg", b"photo3content")
+    hash1 = get_file_hash(f1)
+    hash2 = get_file_hash(f2)
+    hash3 = get_file_hash(f3)
+
+    manifest_dir = SAMPLE_DIR / "delivery_list"
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest = manifest_dir / "m1.csv"
+    with open(manifest, "w", encoding="utf-8") as f:
+        f.write("target_name,expected_hash,camera,sequence\n")
+        f.write(f"A_UNDO001_0001.jpg,{hash1},A,1\n")
+        f.write(f"A_UNDO001_0002.jpg,{hash2},A,2\n")
+        f.write(f"A_UNDO001_0003.jpg,{hash3},A,3\n")
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "undo-single-test",
+        "--json",
+    ])
+    assert result.returncode == 0
+    batch_id = json.loads(result.stdout)["batch_id"]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "import-list", str(manifest),
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "verify",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode in [0, 3, 4, 5]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "plan",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    plan_data = json.loads(result.stdout)
+    corrections = plan_data["corrections"]
+    assert len(corrections) == 3
+    corr_id_1 = corrections[0]["id"]
+    corr_id_2 = corrections[1]["id"]
+    corr_id_3 = corrections[2]["id"]
+    target_1 = corrections[0]["target"]
+    target_2 = corrections[1]["target"]
+    target_3 = corrections[2]["target"]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply_data = json.loads(result.stdout)
+    assert apply_data["applied_count"] == 3
+
+    archive_dir = ARCHIVE_DIR / "undo-single-test"
+    archived_files = list(archive_dir.glob("*.jpg"))
+    assert len(archived_files) == 3
+    assert Path(target_1).exists()
+    assert Path(target_2).exists()
+    assert Path(target_3).exists()
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "report",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    report_before = json.loads(result.stdout)
+    assert report_before["summary"]["active_corrections_count"] == 3
+    assert report_before["summary"]["undone_corrections_count"] == 0
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "undo",
+        "--batch-id", batch_id,
+        "--correction-id", corr_id_2,
+        "--json",
+    ])
+    assert result.returncode == 0
+    undo_data = json.loads(result.stdout)
+    assert undo_data["undone_count"] == 1
+    assert undo_data["total_applied_before"] == 3
+    assert undo_data["remaining_applied_after"] == 2
+    assert undo_data["target_correction_id"] == corr_id_2
+    assert "undo_id" in undo_data
+    assert corr_id_2 in undo_data["undone_ids"]
+
+    archived_files = list(archive_dir.glob("*.jpg"))
+    assert len(archived_files) == 2, "撤销单条后应只剩2个文件"
+    assert Path(target_1).exists()
+    assert not Path(target_2).exists()
+    assert Path(target_3).exists()
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "report",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    report_after = json.loads(result.stdout)
+    assert report_after["summary"]["active_corrections_count"] == 2
+    assert report_after["summary"]["undone_corrections_count"] == 1
+
+    active_ids = {c["id"] for c in report_after["applied_corrections"]}
+    undone_ids = {c["id"] for c in report_after["undone_corrections"]}
+    assert corr_id_1 in active_ids
+    assert corr_id_3 in active_ids
+    assert corr_id_2 in undone_ids
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--correction-id", corr_id_2,
+        "--json",
+    ])
+    assert result.returncode == 1
+    assert "已被撤销" in result.stderr or "撤销" in result.stderr
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "plan",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    plan_rebuild = json.loads(result.stdout)
+    assert plan_rebuild["correction_count"] == 4
+    assert plan_rebuild["applied_count"] == 2
+    assert plan_rebuild["pending_count"] == 1
+    assert plan_rebuild["undone_count"] == 1
+
+    new_corr_id_2 = None
+    for c in plan_rebuild["corrections"]:
+        if c["target"] == target_2 and not c["applied"] and not c["rolled_back"]:
+            new_corr_id_2 = c["id"]
+            break
+    assert new_corr_id_2 is not None
+    assert new_corr_id_2 != corr_id_2
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply_final = json.loads(result.stdout)
+    assert apply_final["applied_count"] == 1
+
+    archived_files = list(archive_dir.glob("*.jpg"))
+    assert len(archived_files) == 3
+    assert Path(target_2).exists()
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "report",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    report_final = json.loads(result.stdout)
+    assert report_final["summary"]["active_corrections_count"] == 3
+    assert report_final["summary"]["undone_corrections_count"] == 1
+
+
+def test_apply_text_output_format():
+    """测试 apply 命令的文本输出格式包含完整统计信息"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+
+    f1 = create_source_file(source_dir, "IMG_0001.jpg", b"photo1content")
+    f2 = create_source_file(source_dir, "IMG_0002.jpg", b"photo2content")
+    hash1 = get_file_hash(f1)
+    hash2 = get_file_hash(f2)
+
+    manifest_dir = SAMPLE_DIR / "delivery_list"
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest = manifest_dir / "m1.csv"
+    with open(manifest, "w", encoding="utf-8") as f:
+        f.write("target_name,expected_hash,camera,sequence\n")
+        f.write(f"A_TEXT001_0001.jpg,{hash1},A,1\n")
+        f.write(f"A_TEXT001_0002.jpg,{hash2},A,2\n")
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "text-output-test",
+    ])
+    assert result.returncode == 0
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "import-list", str(manifest),
+    ])
+    assert result.returncode == 0
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "verify",
+    ])
+    assert result.returncode in [0, 3, 4, 5]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "plan",
+    ])
+    assert result.returncode == 0
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--limit", "1",
+    ])
+    assert result.returncode == 0
+    assert "本次应用: 1" in result.stdout
+    assert "本次跳过: 0" in result.stdout
+    assert "本次失败: 0" in result.stdout
+    assert "剩余未应用: 1" in result.stdout
+    assert "总计: 2" in result.stdout
+    assert "批次执行ID:" in result.stdout
+    assert "限制数量: 1" in result.stdout
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+    ])
+    assert result.returncode == 0
+    assert "本次应用: 1" in result.stdout
+    assert "剩余未应用: 0" in result.stdout
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "undo",
+    ])
+    assert result.returncode == 0
+    assert "本次撤销: 2" in result.stdout
+    assert "撤销前已应用: 2" in result.stdout
+    assert "剩余已应用: 0" in result.stdout
+    assert "撤销执行ID:" in result.stdout
+
+
+def test_apply_records_persist_across_restart():
+    """测试 apply_records 和 undo_records 跨进程重启持久化"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+
+    f1 = create_source_file(source_dir, "IMG_0001.jpg", b"photo1content")
+    f2 = create_source_file(source_dir, "IMG_0002.jpg", b"photo2content")
+    hash1 = get_file_hash(f1)
+    hash2 = get_file_hash(f2)
+
+    manifest_dir = SAMPLE_DIR / "delivery_list"
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+
+    manifest = manifest_dir / "m1.csv"
+    with open(manifest, "w", encoding="utf-8") as f:
+        f.write("target_name,expected_hash,camera,sequence\n")
+        f.write(f"A_PERSIST01_0001.jpg,{hash1},A,1\n")
+        f.write(f"A_PERSIST01_0002.jpg,{hash2},A,2\n")
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "persist-test",
+        "--json",
+    ])
+    assert result.returncode == 0
+    batch_id = json.loads(result.stdout)["batch_id"]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "import-list", str(manifest),
+        "--batch-id", batch_id,
+    ])
+    assert result.returncode == 0
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "verify",
+        "--batch-id", batch_id,
+    ])
+    assert result.returncode in [0, 3, 4, 5]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "plan",
+        "--batch-id", batch_id,
+    ])
+    assert result.returncode == 0
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--limit", "1",
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply1 = json.loads(result.stdout)
+    apply_id_1 = apply1["apply_id"]
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply2 = json.loads(result.stdout)
+    apply_id_2 = apply2["apply_id"]
+    assert apply_id_1 != apply_id_2
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "undo",
+        "--batch-id", batch_id,
+        "--json",
+    ])
+    assert result.returncode == 0
+    undo1 = json.loads(result.stdout)
+    undo_id_1 = undo1["undo_id"]
+
+    batch_file = WORK_DIR / "batches" / f"{batch_id}.json"
+    assert batch_file.exists()
+    with open(batch_file, "r", encoding="utf-8") as f:
+        batch_data = json.load(f)
+
+    assert "apply_records" in batch_data
+    assert len(batch_data["apply_records"]) == 2
+    assert batch_data["apply_records"][0]["apply_id"] == apply_id_1
+    assert batch_data["apply_records"][1]["apply_id"] == apply_id_2
+    assert batch_data["apply_records"][0]["applied_count"] == 1
+    assert batch_data["apply_records"][1]["applied_count"] == 1
+
+    assert "undo_records" in batch_data
+    assert len(batch_data["undo_records"]) == 1
+    assert batch_data["undo_records"][0]["undo_id"] == undo_id_1
+    assert batch_data["undo_records"][0]["undone_count"] == 2
+
+    assert "last_apply_at" in batch_data
+    assert batch_data["last_apply_at"] is not None
+    assert "last_undo_at" in batch_data
+    assert batch_data["last_undo_at"] is not None
+

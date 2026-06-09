@@ -1,0 +1,259 @@
+{
+  "batch_id": "66d29ec7",
+  "name": "review-live",
+  "created_at": "2026-06-09T16:10:48.570076",
+  "updated_at": "2026-06-09T16:12:55.502039",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0001.jpg",
+      "file_name": "IMG_0001.jpg",
+      "size": 16,
+      "hash": "41f6c3bfd861f22c4507356472fc7e19cc48e2a71e73f62756accb5b19836da3",
+      "extension": "jpg",
+      "camera": null,
+      "detected_batch": "IMG"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0002.jpg",
+      "file_name": "IMG_0002.jpg",
+      "size": 16,
+      "hash": "f25fb493236b55814ea53d3ad9c2265504b8f71bbae57316f5e22a1c6b0280d0",
+      "extension": "jpg",
+      "camera": null,
+      "detected_batch": "IMG"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0003.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0003.jpg",
+      "file_name": "IMG_0003.jpg",
+      "size": 16,
+      "hash": "46da348c80f9cf9c99d174f8c57c76d7682a7bdced1e4ea744a7fee00727434e",
+      "extension": "jpg",
+      "camera": null,
+      "detected_batch": "IMG"
+    }
+  },
+  "delivery_list": {
+    "A_REVIEWLIVE_0001.jpg": {
+      "target_name": "A_REVIEWLIVE_0001.jpg",
+      "expected_hash": "41f6c3bfd861f22c4507356472fc7e19cc48e2a71e73f62756accb5b19836da3",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0001.jpg",
+      "actual_hash": "41f6c3bfd861f22c4507356472fc7e19cc48e2a71e73f62756accb5b19836da3"
+    },
+    "A_REVIEWLIVE_0002.jpg": {
+      "target_name": "A_REVIEWLIVE_0002.jpg",
+      "expected_hash": "f25fb493236b55814ea53d3ad9c2265504b8f71bbae57316f5e22a1c6b0280d0",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 2,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0002.jpg",
+      "actual_hash": "f25fb493236b55814ea53d3ad9c2265504b8f71bbae57316f5e22a1c6b0280d0"
+    },
+    "A_REVIEWLIVE_0003.jpg": {
+      "target_name": "A_REVIEWLIVE_0003.jpg",
+      "expected_hash": "46da348c80f9cf9c99d174f8c57c76d7682a7bdced1e4ea744a7fee00727434e",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 3,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0003.jpg",
+      "actual_hash": "46da348c80f9cf9c99d174f8c57c76d7682a7bdced1e4ea744a7fee00727434e"
+    }
+  },
+  "corrections": [
+    {
+      "id": "206fef1c-634f-4957-b572-5eb352599011",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\archive\\review-live\\A_REVIEWLIVE_0001.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": true,
+      "applied_at": "2026-06-09T16:11:15.459594",
+      "rolled_back": false
+    },
+    {
+      "id": "4fe2509c-1bf5-4981-a3d2-71c8ee7a01f8",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0003.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\archive\\review-live\\A_REVIEWLIVE_0003.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": true,
+      "applied_at": "2026-06-09T16:11:47.056049",
+      "rolled_back": false
+    },
+    {
+      "id": "1a46a6ca-02d4-489a-8876-839cb353cc80",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0002.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\archive\\review-live\\A_REVIEWLIVE_0002.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": false,
+      "applied_at": "2026-06-09T16:11:15.460450",
+      "rolled_back": true
+    },
+    {
+      "id": "746a723f-e651-465c-90ae-e78493a3371c",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A\\IMG_0002.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\archive\\review-live\\A_REVIEWLIVE_0002.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": true,
+      "applied_at": "2026-06-09T16:12:55.501973",
+      "rolled_back": false
+    }
+  ],
+  "import_records": [
+    {
+      "import_id": "e7c5d0b4",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\delivery_list\\delivery_manifest.csv",
+      "imported_at": "2026-06-09T16:10:58.083870",
+      "imported_count": 3,
+      "batch_name": "review-live",
+      "items": [
+        {
+          "target_name": "A_REVIEWLIVE_0001.jpg",
+          "expected_hash": "41f6c3bfd861f22c4507356472fc7e19cc48e2a71e73f62756accb5b19836da3",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        },
+        {
+          "target_name": "A_REVIEWLIVE_0002.jpg",
+          "expected_hash": "f25fb493236b55814ea53d3ad9c2265504b8f71bbae57316f5e22a1c6b0280d0",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 2,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        },
+        {
+          "target_name": "A_REVIEWLIVE_0003.jpg",
+          "expected_hash": "46da348c80f9cf9c99d174f8c57c76d7682a7bdced1e4ea744a7fee00727434e",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 3,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ],
+      "dry_run": false,
+      "conflict_summary": {
+        "target_name_conflicts": [],
+        "source_file_conflicts": [],
+        "batch_name_conflicts": []
+      },
+      "added_items": [
+        "A_REVIEWLIVE_0001.jpg",
+        "A_REVIEWLIVE_0002.jpg",
+        "A_REVIEWLIVE_0003.jpg"
+      ],
+      "skipped_items": [],
+      "conflicted_items": [],
+      "overwritten_items": []
+    }
+  ],
+  "conflicts": [],
+  "apply_records": [
+    {
+      "apply_id": "f1adb305",
+      "applied_at": "2026-06-09T16:11:15.460492",
+      "applied_count": 2,
+      "skipped_count": 0,
+      "failed_count": 0,
+      "remaining_count": 1,
+      "total_count": 3,
+      "applied_ids": [
+        "206fef1c-634f-4957-b572-5eb352599011",
+        "1a46a6ca-02d4-489a-8876-839cb353cc80"
+      ],
+      "skipped_ids": [],
+      "failed_ids": [],
+      "limit": 2,
+      "target_correction_id": null,
+      "hash_mismatch_count": 0
+    },
+    {
+      "apply_id": "45419161",
+      "applied_at": "2026-06-09T16:11:36.723087",
+      "applied_count": 0,
+      "skipped_count": 1,
+      "failed_count": 0,
+      "remaining_count": 1,
+      "total_count": 3,
+      "applied_ids": [],
+      "skipped_ids": [
+        "206fef1c-634f-4957-b572-5eb352599011"
+      ],
+      "failed_ids": [],
+      "limit": null,
+      "target_correction_id": "206fef1c-634f-4957-b572-5eb352599011",
+      "hash_mismatch_count": 0
+    },
+    {
+      "apply_id": "d8addb88",
+      "applied_at": "2026-06-09T16:11:47.056102",
+      "applied_count": 1,
+      "skipped_count": 0,
+      "failed_count": 0,
+      "remaining_count": 0,
+      "total_count": 3,
+      "applied_ids": [
+        "4fe2509c-1bf5-4981-a3d2-71c8ee7a01f8"
+      ],
+      "skipped_ids": [],
+      "failed_ids": [],
+      "limit": null,
+      "target_correction_id": null,
+      "hash_mismatch_count": 0
+    },
+    {
+      "apply_id": "470679ee",
+      "applied_at": "2026-06-09T16:12:55.502028",
+      "applied_count": 1,
+      "skipped_count": 0,
+      "failed_count": 0,
+      "remaining_count": 0,
+      "total_count": 4,
+      "applied_ids": [
+        "746a723f-e651-465c-90ae-e78493a3371c"
+      ],
+      "skipped_ids": [],
+      "failed_ids": [],
+      "limit": 1,
+      "target_correction_id": null,
+      "hash_mismatch_count": 0
+    }
+  ],
+  "undo_records": [
+    {
+      "undo_id": "9616c110",
+      "undone_at": "2026-06-09T16:12:23.185448",
+      "undone_count": 1,
+      "failed_count": 0,
+      "total_applied_before": 3,
+      "remaining_applied_after": 2,
+      "undone_ids": [
+        "1a46a6ca-02d4-489a-8876-839cb353cc80"
+      ],
+      "failed_ids": [],
+      "target_correction_id": "1a46a6ca-02d4-489a-8876-839cb353cc80"
+    }
+  ],
+  "merge_status": "ok",
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_live_case\\source_cards\\card_A",
+  "last_scan_at": "2026-06-09T16:10:48.572398",
+  "last_import_at": "2026-06-09T16:10:58.083920",
+  "last_verify_at": "2026-06-09T16:11:07.454733",
+  "last_apply_at": "2026-06-09T16:12:55.502034",
+  "last_undo_at": "2026-06-09T16:12:23.185470",
+  "normalized_name": "review-live"
+}

@@ -234,6 +234,98 @@ class Conflict:
 
 
 @dataclass
+class ApplyRecord:
+    apply_id: str
+    applied_at: datetime
+    applied_count: int
+    skipped_count: int
+    failed_count: int
+    remaining_count: int
+    total_count: int
+    applied_ids: List[str] = field(default_factory=list)
+    skipped_ids: List[str] = field(default_factory=list)
+    failed_ids: List[str] = field(default_factory=list)
+    limit: Optional[int] = None
+    target_correction_id: Optional[str] = None
+    hash_mismatch_count: int = 0
+
+    def to_dict(self) -> Dict:
+        return {
+            "apply_id": self.apply_id,
+            "applied_at": self.applied_at.isoformat(),
+            "applied_count": self.applied_count,
+            "skipped_count": self.skipped_count,
+            "failed_count": self.failed_count,
+            "remaining_count": self.remaining_count,
+            "total_count": self.total_count,
+            "applied_ids": self.applied_ids,
+            "skipped_ids": self.skipped_ids,
+            "failed_ids": self.failed_ids,
+            "limit": self.limit,
+            "target_correction_id": self.target_correction_id,
+            "hash_mismatch_count": self.hash_mismatch_count,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "ApplyRecord":
+        return cls(
+            apply_id=data["apply_id"],
+            applied_at=datetime.fromisoformat(data["applied_at"]),
+            applied_count=data["applied_count"],
+            skipped_count=data["skipped_count"],
+            failed_count=data["failed_count"],
+            remaining_count=data["remaining_count"],
+            total_count=data["total_count"],
+            applied_ids=data.get("applied_ids", []),
+            skipped_ids=data.get("skipped_ids", []),
+            failed_ids=data.get("failed_ids", []),
+            limit=data.get("limit"),
+            target_correction_id=data.get("target_correction_id"),
+            hash_mismatch_count=data.get("hash_mismatch_count", 0),
+        )
+
+
+@dataclass
+class UndoRecord:
+    undo_id: str
+    undone_at: datetime
+    undone_count: int
+    failed_count: int
+    total_applied_before: int
+    remaining_applied_after: int
+    undone_ids: List[str] = field(default_factory=list)
+    failed_ids: List[str] = field(default_factory=list)
+    target_correction_id: Optional[str] = None
+
+    def to_dict(self) -> Dict:
+        return {
+            "undo_id": self.undo_id,
+            "undone_at": self.undone_at.isoformat(),
+            "undone_count": self.undone_count,
+            "failed_count": self.failed_count,
+            "total_applied_before": self.total_applied_before,
+            "remaining_applied_after": self.remaining_applied_after,
+            "undone_ids": self.undone_ids,
+            "failed_ids": self.failed_ids,
+            "target_correction_id": self.target_correction_id,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "UndoRecord":
+        return cls(
+            undo_id=data["undo_id"],
+            undone_at=datetime.fromisoformat(data["undone_at"]),
+            undone_count=data["undone_count"],
+            failed_count=data["failed_count"],
+            total_applied_before=data["total_applied_before"],
+            remaining_applied_after=data["remaining_applied_after"],
+            undone_ids=data.get("undone_ids", []),
+            failed_ids=data.get("failed_ids", []),
+            target_correction_id=data.get("target_correction_id"),
+        )
+
+
+@dataclass
 class BatchHistory:
     batch_id: str
     name: str
@@ -244,11 +336,15 @@ class BatchHistory:
     corrections: List[CorrectionAction] = field(default_factory=list)
     import_records: List[ImportRecord] = field(default_factory=list)
     conflicts: List[Conflict] = field(default_factory=list)
+    apply_records: List[ApplyRecord] = field(default_factory=list)
+    undo_records: List[UndoRecord] = field(default_factory=list)
     merge_status: MergeStatus = MergeStatus.PENDING
     scan_source_dir: Optional[str] = None
     last_scan_at: Optional[datetime] = None
     last_import_at: Optional[datetime] = None
     last_verify_at: Optional[datetime] = None
+    last_apply_at: Optional[datetime] = None
+    last_undo_at: Optional[datetime] = None
     normalized_name: str = ""
 
     def __post_init__(self):
@@ -270,11 +366,15 @@ class BatchHistory:
             "corrections": [c.to_dict() for c in self.corrections],
             "import_records": [r.to_dict() for r in self.import_records],
             "conflicts": [c.to_dict() for c in self.conflicts],
+            "apply_records": [r.to_dict() for r in self.apply_records],
+            "undo_records": [r.to_dict() for r in self.undo_records],
             "merge_status": self.merge_status.value,
             "scan_source_dir": self.scan_source_dir,
             "last_scan_at": self.last_scan_at.isoformat() if self.last_scan_at else None,
             "last_import_at": self.last_import_at.isoformat() if self.last_import_at else None,
             "last_verify_at": self.last_verify_at.isoformat() if self.last_verify_at else None,
+            "last_apply_at": self.last_apply_at.isoformat() if self.last_apply_at else None,
+            "last_undo_at": self.last_undo_at.isoformat() if self.last_undo_at else None,
             "normalized_name": self.normalized_name,
         }
 
@@ -290,11 +390,15 @@ class BatchHistory:
             corrections=[CorrectionAction.from_dict(c) for c in data.get("corrections", [])],
             import_records=[ImportRecord.from_dict(r) for r in data.get("import_records", [])],
             conflicts=[Conflict.from_dict(c) for c in data.get("conflicts", [])],
+            apply_records=[ApplyRecord.from_dict(r) for r in data.get("apply_records", [])],
+            undo_records=[UndoRecord.from_dict(r) for r in data.get("undo_records", [])],
             merge_status=MergeStatus(data.get("merge_status", MergeStatus.PENDING.value)),
             scan_source_dir=data.get("scan_source_dir"),
             last_scan_at=datetime.fromisoformat(data["last_scan_at"]) if data.get("last_scan_at") else None,
             last_import_at=datetime.fromisoformat(data["last_import_at"]) if data.get("last_import_at") else None,
             last_verify_at=datetime.fromisoformat(data["last_verify_at"]) if data.get("last_verify_at") else None,
+            last_apply_at=datetime.fromisoformat(data["last_apply_at"]) if data.get("last_apply_at") else None,
+            last_undo_at=datetime.fromisoformat(data["last_undo_at"]) if data.get("last_undo_at") else None,
             normalized_name=data.get("normalized_name", ""),
         )
 
