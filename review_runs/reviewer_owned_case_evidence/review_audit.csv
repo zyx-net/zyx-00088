@@ -1,0 +1,37 @@
+﻿=== 批次概览 ===
+batch_id,dd657b64
+batch_name,reviewer-owned
+normalized_name,reviewer-owned
+created_at,2026-06-09T15:31:11.119487
+updated_at,2026-06-09T15:32:10.124764
+merge_status,ok
+total_delivery_items,2
+total_scanned_files,3
+ok_count,0
+missing_count,0
+duplicate_count,0
+hash_mismatch_count,0
+total_conflicts,1
+unresolved_conflicts_count,0
+total_imports,2
+total_applied_corrections,0
+active_corrections_count,0
+undone_corrections_count,0
+scan_source_dir,D:\workSpace\AI__SPACE\zyx-00088\review_runs\reviewer_owned_case_evidence\source_cards\card_A
+archive_dir,archive\reviewer-owned
+hash_strategy,sha256
+
+=== 导入记录 ===
+导入ID,源文件,导入时间,导入数量,批次名,是否预览,新增,跳过,覆盖,冲突,冲突摘要
+41c1bf3a,D:\workSpace\AI__SPACE\zyx-00088\review_runs\reviewer_owned_case_evidence\delivery_list\review_manifest_1.csv,2026-06-09T15:31:18.572580,1,reviewer-owned,否,1,0,0,0,"{""target_name_conflicts"": [], ""source_file_conflicts"": [], ""batch_name_conflicts"": []}"
+570fc68a,D:\workSpace\AI__SPACE\zyx-00088\review_runs\reviewer_owned_case_evidence\delivery_list\review_manifest_2.csv,2026-06-09T15:32:10.124724,2,reviewer-owned,否,1,0,1,0,"{""target_name_conflicts"": [{""target_name"": ""A_REVIEWCASE_0001.jpg"", ""message"": ""目标文件名 'A_REVIEWCASE_0001.jpg' 在多个清单中指向不同的源文件: 新清单期望哈希=eeb9efb5c1918a45a6ae7b9b29c3b3a97073650897fc86d1fc8bcd5933172ce4, 现有清单期望哈希=e5ad53aaaa8bd60202ba936a1470bc684e31b854a2db33250cc652fc7783ee3b""}], ""source_file_conflicts"": [], ""batch_name_conflicts"": []}"
+
+=== 冲突列表 ===
+冲突ID,冲突类型,目标文件名,源文件,批次名,是否已解决,消息
+149d5974,target_name_conflict,A_REVIEWCASE_0001.jpg,,reviewer-owned,True,"[已覆盖] 目标文件名 'A_REVIEWCASE_0001.jpg' 在多个清单中指向不同的源文件: 新清单期望哈希=eeb9efb5c1918a45a6ae7b9b29c3b3a97073650897fc86d1fc8bcd5933172ce4, 现有清单期望哈希=e5ad53aaaa8bd60202ba936a1470bc684e31b854a2db33250cc652fc7783ee3b"
+
+=== 文件映射 ===
+目标文件名,原路径,状态,期望哈希,实际哈希,期望机位,序号
+A_REVIEWCASE_0001.jpg,,unknown,eeb9efb5c1918a45a6ae7b9b29c3b3a97073650897fc86d1fc8bcd5933172ce4,,A,1
+A_REVIEWCASE_0002.jpg,,unknown,76626fd66474c6c2218f2d0783e446a26c42988cac03ba0ba9b1b3ccb0482078,,A,2
+

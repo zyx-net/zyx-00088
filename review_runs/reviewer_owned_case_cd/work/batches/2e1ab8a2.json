@@ -1,0 +1,165 @@
+{
+  "batch_id": "2e1ab8a2",
+  "name": "reviewer-owned",
+  "created_at": "2026-06-09T15:28:13.578598",
+  "updated_at": "2026-06-09T15:28:15.104988",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_cd\\source_cards\\card_A\\A_REVIEWCASE_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_cd\\source_cards\\card_A\\A_REVIEWCASE_0001.jpg",
+      "file_name": "A_REVIEWCASE_0001.jpg",
+      "size": 54,
+      "hash": "c86427add894d668d27aaed95a1ad6a1b2246407ab3e83d2137566fdc4703145",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "REVIEWCASE"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_cd\\source_cards\\card_A\\A_REVIEWCASE_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_cd\\source_cards\\card_A\\A_REVIEWCASE_0002.jpg",
+      "file_name": "A_REVIEWCASE_0002.jpg",
+      "size": 54,
+      "hash": "4493a2583041b432bb1c3dc5ed1ae5637258aca5bdf4f6738502d38ddee02e9b",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "REVIEWCASE"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_cd\\source_cards\\card_A\\A_REVIEWCASE_0003.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_cd\\source_cards\\card_A\\A_REVIEWCASE_0003.jpg",
+      "file_name": "A_REVIEWCASE_0003.jpg",
+      "size": 54,
+      "hash": "b6ac1b6a2991dd5c36776ae52ef94123d1c75006c06bf9902af6930c51cd2119",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "REVIEWCASE"
+    }
+  },
+  "delivery_list": {
+    "A_REVIEWCASE_0001.jpg": {
+      "target_name": "A_REVIEWCASE_0001.jpg",
+      "expected_hash": "4493a2583041b432bb1c3dc5ed1ae5637258aca5bdf4f6738502d38ddee02e9b",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "unknown",
+      "matched_source": null,
+      "actual_hash": null
+    },
+    "A_REVIEWCASE_0002.jpg": {
+      "target_name": "A_REVIEWCASE_0002.jpg",
+      "expected_hash": "b6ac1b6a2991dd5c36776ae52ef94123d1c75006c06bf9902af6930c51cd2119",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 2,
+      "status": "unknown",
+      "matched_source": null,
+      "actual_hash": null
+    }
+  },
+  "corrections": [],
+  "import_records": [
+    {
+      "import_id": "2b4518c6",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_cd\\delivery_list\\review_manifest_1.csv",
+      "imported_at": "2026-06-09T15:28:13.793042",
+      "imported_count": 1,
+      "batch_name": "reviewer-owned",
+      "items": [
+        {
+          "target_name": "A_REVIEWCASE_0001.jpg",
+          "expected_hash": "c86427add894d668d27aaed95a1ad6a1b2246407ab3e83d2137566fdc4703145",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ],
+      "dry_run": false,
+      "conflict_summary": {
+        "target_name_conflicts": [],
+        "source_file_conflicts": [],
+        "batch_name_conflicts": []
+      },
+      "added_items": [
+        "A_REVIEWCASE_0001.jpg"
+      ],
+      "skipped_items": [],
+      "conflicted_items": [],
+      "overwritten_items": []
+    },
+    {
+      "import_id": "0937d82a",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_cd\\delivery_list\\review_manifest_2.csv",
+      "imported_at": "2026-06-09T15:28:15.104949",
+      "imported_count": 2,
+      "batch_name": "reviewer-owned",
+      "items": [
+        {
+          "target_name": "A_REVIEWCASE_0001.jpg",
+          "expected_hash": "4493a2583041b432bb1c3dc5ed1ae5637258aca5bdf4f6738502d38ddee02e9b",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        },
+        {
+          "target_name": "A_REVIEWCASE_0002.jpg",
+          "expected_hash": "b6ac1b6a2991dd5c36776ae52ef94123d1c75006c06bf9902af6930c51cd2119",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 2,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ],
+      "dry_run": false,
+      "conflict_summary": {
+        "target_name_conflicts": [
+          {
+            "target_name": "A_REVIEWCASE_0001.jpg",
+            "message": "目标文件名 'A_REVIEWCASE_0001.jpg' 在多个清单中指向不同的源文件: 新清单期望哈希=4493a2583041b432bb1c3dc5ed1ae5637258aca5bdf4f6738502d38ddee02e9b, 现有清单期望哈希=c86427add894d668d27aaed95a1ad6a1b2246407ab3e83d2137566fdc4703145"
+          }
+        ],
+        "source_file_conflicts": [],
+        "batch_name_conflicts": []
+      },
+      "added_items": [
+        "A_REVIEWCASE_0002.jpg"
+      ],
+      "skipped_items": [],
+      "conflicted_items": [],
+      "overwritten_items": [
+        "A_REVIEWCASE_0001.jpg"
+      ]
+    }
+  ],
+  "conflicts": [
+    {
+      "conflict_id": "3ade94e0",
+      "conflict_type": "target_name_conflict",
+      "target_name": "A_REVIEWCASE_0001.jpg",
+      "source_file": null,
+      "batch_name": "reviewer-owned",
+      "message": "[已覆盖] 目标文件名 'A_REVIEWCASE_0001.jpg' 在多个清单中指向不同的源文件: 新清单期望哈希=4493a2583041b432bb1c3dc5ed1ae5637258aca5bdf4f6738502d38ddee02e9b, 现有清单期望哈希=c86427add894d668d27aaed95a1ad6a1b2246407ab3e83d2137566fdc4703145",
+      "details": {
+        "new_expected_hash": "4493a2583041b432bb1c3dc5ed1ae5637258aca5bdf4f6738502d38ddee02e9b",
+        "existing_expected_hash": "c86427add894d668d27aaed95a1ad6a1b2246407ab3e83d2137566fdc4703145",
+        "new_expected_size": null,
+        "existing_expected_size": null,
+        "new_expected_camera": "A",
+        "existing_expected_camera": "A"
+      },
+      "resolved": true,
+      "resolved_at": "2026-06-09T15:28:15.104979"
+    }
+  ],
+  "merge_status": "ok",
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_cd\\source_cards\\card_A",
+  "last_scan_at": "2026-06-09T15:28:13.580893",
+  "last_import_at": "2026-06-09T15:28:15.104984",
+  "last_verify_at": null,
+  "normalized_name": "reviewer-owned"
+}

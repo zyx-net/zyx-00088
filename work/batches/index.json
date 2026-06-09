@@ -1,0 +1,20 @@
+[
+  {
+    "batch_id": "362ba006",
+    "name": "reviewer-owned",
+    "created_at": "2026-06-09T15:25:07.783430",
+    "updated_at": "2026-06-09T15:26:02.389981",
+    "file_count": 6,
+    "delivery_count": 1,
+    "correction_count": 0
+  },
+  {
+    "batch_id": "c9e50c45",
+    "name": "batch-c9e50c45",
+    "created_at": "2026-06-09T15:25:07.783408",
+    "updated_at": "2026-06-09T15:25:07.784926",
+    "file_count": 0,
+    "delivery_count": 1,
+    "correction_count": 0
+  }
+]

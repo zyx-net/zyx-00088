@@ -78,13 +78,7 @@ def _build_report_data(batch: BatchHistory, config: Config) -> Dict:
     active_corrections = [c for c in applied_corrections if not c["rolled_back"]]
 
     for record in batch.import_records:
-        import_records.append({
-            "import_id": record.import_id,
-            "source_file": record.source_file,
-            "imported_at": record.imported_at.isoformat(),
-            "imported_count": record.imported_count,
-            "batch_name": record.batch_name,
-        })
+        import_records.append(record.to_dict())
 
     for conflict in batch.conflicts:
         conflict_dict = {
@@ -157,14 +151,21 @@ def _write_csv_report(path: Path, data: Dict) -> None:
 
         if data.get("import_records"):
             writer.writerow(["=== 导入记录 ==="])
-            writer.writerow(["导入ID", "源文件", "导入时间", "导入数量", "批次名"])
+            writer.writerow(["导入ID", "源文件", "导入时间", "导入数量", "批次名", "是否预览", "新增", "跳过", "覆盖", "冲突", "冲突摘要"])
             for item in data["import_records"]:
+                conflict_summary = json.dumps(item.get("conflict_summary", {}), ensure_ascii=False) if item.get("conflict_summary") else ""
                 writer.writerow([
                     item["import_id"],
                     item["source_file"],
                     item["imported_at"],
                     item["imported_count"],
                     item["batch_name"],
+                    "是" if item.get("dry_run") else "否",
+                    len(item.get("added_items", [])),
+                    len(item.get("skipped_items", [])),
+                    len(item.get("overwritten_items", [])),
+                    len(item.get("conflicted_items", [])),
+                    conflict_summary,
                 ])
             writer.writerow([])
 

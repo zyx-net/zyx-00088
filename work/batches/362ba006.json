@@ -1,0 +1,115 @@
+{
+  "batch_id": "362ba006",
+  "name": "reviewer-owned",
+  "created_at": "2026-06-09T15:25:07.783430",
+  "updated_at": "2026-06-09T15:26:02.389981",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case\\source_cards\\card_A\\A_REVIEWCASE_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case\\source_cards\\card_A\\A_REVIEWCASE_0001.jpg",
+      "file_name": "A_REVIEWCASE_0001.jpg",
+      "size": 54,
+      "hash": "526478c6da57f0cb04c4c0bde8a0a6dbcdfc9bf4f70aa876f67cf095a9f06470",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "REVIEWCASE"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case\\source_cards\\card_A\\A_REVIEWCASE_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case\\source_cards\\card_A\\A_REVIEWCASE_0002.jpg",
+      "file_name": "A_REVIEWCASE_0002.jpg",
+      "size": 54,
+      "hash": "8958a358edcddb85f02c0e250adc1c96cd99679fcb54f7ef8270ad49730a259e",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "REVIEWCASE"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case\\source_cards\\card_A\\A_REVIEWCASE_0003.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case\\source_cards\\card_A\\A_REVIEWCASE_0003.jpg",
+      "file_name": "A_REVIEWCASE_0003.jpg",
+      "size": 54,
+      "hash": "019db9ca026082eaffe292a92b9834834e61a4ee979979f3bc76901c5ebf6b31",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "REVIEWCASE"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_seq\\source_cards\\card_A\\A_REVIEWCASE_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_seq\\source_cards\\card_A\\A_REVIEWCASE_0001.jpg",
+      "file_name": "A_REVIEWCASE_0001.jpg",
+      "size": 54,
+      "hash": "2c964d119a4151f923a0b2149aced088d725e0588bf28a18f8db404ce3d5c6d2",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "REVIEWCASE"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_seq\\source_cards\\card_A\\A_REVIEWCASE_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_seq\\source_cards\\card_A\\A_REVIEWCASE_0002.jpg",
+      "file_name": "A_REVIEWCASE_0002.jpg",
+      "size": 54,
+      "hash": "7896855450b25decadf35d55dd0f8f14fcd7123c0cde657501564ab247216ea8",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "REVIEWCASE"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_seq\\source_cards\\card_A\\A_REVIEWCASE_0003.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_seq\\source_cards\\card_A\\A_REVIEWCASE_0003.jpg",
+      "file_name": "A_REVIEWCASE_0003.jpg",
+      "size": 54,
+      "hash": "a6443277481cf5fa0457fdde84902baa548eda2933434c9d1b2c6897f655ef8c",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "REVIEWCASE"
+    }
+  },
+  "delivery_list": {
+    "A_REVIEWCASE_0001.jpg": {
+      "target_name": "A_REVIEWCASE_0001.jpg",
+      "expected_hash": "2c964d119a4151f923a0b2149aced088d725e0588bf28a18f8db404ce3d5c6d2",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "unknown",
+      "matched_source": null,
+      "actual_hash": null
+    }
+  },
+  "corrections": [],
+  "import_records": [
+    {
+      "import_id": "10867f4e",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_seq\\delivery_list\\review_manifest_1.csv",
+      "imported_at": "2026-06-09T15:26:02.389947",
+      "imported_count": 1,
+      "batch_name": "reviewer-owned",
+      "items": [
+        {
+          "target_name": "A_REVIEWCASE_0001.jpg",
+          "expected_hash": "2c964d119a4151f923a0b2149aced088d725e0588bf28a18f8db404ce3d5c6d2",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ],
+      "dry_run": false,
+      "conflict_summary": {
+        "target_name_conflicts": [],
+        "source_file_conflicts": [],
+        "batch_name_conflicts": []
+      },
+      "added_items": [
+        "A_REVIEWCASE_0001.jpg"
+      ],
+      "skipped_items": [],
+      "conflicted_items": [],
+      "overwritten_items": []
+    }
+  ],
+  "conflicts": [],
+  "merge_status": "ok",
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_owned_case_seq\\source_cards\\card_A",
+  "last_scan_at": "2026-06-09T15:25:53.761847",
+  "last_import_at": "2026-06-09T15:26:02.389977",
+  "last_verify_at": null,
+  "normalized_name": "reviewer-owned"
+}

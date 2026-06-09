@@ -126,33 +126,68 @@ def scan(ctx, source_dir: str, batch_id: Optional[str], batch_name: Optional[str
 @click.option("--batch-name", help="新批次名称")
 @click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
 @click.option("--merge/--no-merge", default=True, help="是否合并到现有清单")
+@click.option("--dry-run", is_flag=True, help="预览模式，只输出将新增、跳过、冲突的数量和明细，不修改批次历史")
+@click.option("--allow-overwrite", is_flag=True, help="允许覆盖已有清单项（默认保护旧数据，遇到不同的同名项将被跳过）")
 @click.pass_context
-def import_list(ctx, manifest_path: str, batch_id: Optional[str], batch_name: Optional[str], output_json: bool, merge: bool):
+def import_list(ctx, manifest_path: str, batch_id: Optional[str], batch_name: Optional[str], output_json: bool, merge: bool, dry_run: bool, allow_overwrite: bool):
     """导入交付清单 (CSV 格式)"""
     config = ctx.obj["config"]
     storage = ctx.obj["storage"]
 
     try:
-        result = import_delivery_list(config, storage, manifest_path, batch_id, batch_name, merge)
+        result = import_delivery_list(
+            config, storage, manifest_path, batch_id, batch_name, merge,
+            dry_run, allow_overwrite
+        )
         conflict_count = result.get("conflict_count", 0)
 
         if output_json:
             _print_json(result)
         else:
+            if dry_run:
+                click.echo(f"[PREVIEW] 导入预览（未写入批次历史）")
+            else:
+                if conflict_count > 0:
+                    click.echo(f"[WARN] 导入完成但存在冲突")
+                else:
+                    click.echo(f"[OK] 导入完成")
+
+            click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
+            click.echo(f"  清单文件: {result['source_file']}")
+            click.echo(f"  导入条目: {result['imported_count']} 个")
+            click.echo(f"  新增: {result['added_count']} 个")
+            if allow_overwrite:
+                click.echo(f"  覆盖: {result['overwritten_count']} 个")
+            click.echo(f"  跳过: {result['skipped_count']} 个")
+            click.echo(f"  冲突: {result['conflicted_count']} 个")
+
+            if result['added_items']:
+                click.echo("\n新增明细:")
+                for name in result['added_items']:
+                    click.echo(f"  + {name}")
+
+            if result['overwritten_items']:
+                click.echo("\n覆盖明细:")
+                for name in result['overwritten_items']:
+                    click.echo(f"  ~ {name}")
+
+            if result['skipped_items']:
+                click.echo("\n跳过明细:")
+                for name in result['skipped_items']:
+                    click.echo(f"  - {name}")
+
+            if result['conflicted_items']:
+                click.echo("\n冲突明细:")
+                for name in result['conflicted_items']:
+                    click.echo(f"  ! {name}")
+
             if conflict_count > 0:
-                click.echo(f"[WARN] 导入完成但存在冲突")
-                click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
-                click.echo(f"  清单文件: {result['source_file']}")
-                click.echo(f"  导入条目: {result['imported_count']} 个")
-                click.echo(f"  冲突数量: {conflict_count} 个")
                 click.echo("\n冲突列表:")
                 for c in result.get("conflicts", []):
                     click.echo(f"  - [{c['conflict_type']}] {c['message']}")
-            else:
-                click.echo(f"[OK] 导入完成")
-                click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
-                click.echo(f"  清单文件: {result['source_file']}")
-                click.echo(f"  导入条目: {result['imported_count']} 个")
+
+            if dry_run:
+                click.echo("\n提示: 添加 --allow-overwrite 可允许覆盖已有的不同名清单项")
 
         if conflict_count > 0:
             sys.exit(7)

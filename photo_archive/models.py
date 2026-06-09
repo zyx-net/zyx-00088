@@ -152,6 +152,12 @@ class ImportRecord:
     imported_count: int
     batch_name: str
     items: List[Dict] = field(default_factory=list)
+    dry_run: bool = False
+    conflict_summary: Dict = field(default_factory=dict)
+    added_items: List[str] = field(default_factory=list)
+    skipped_items: List[str] = field(default_factory=list)
+    conflicted_items: List[str] = field(default_factory=list)
+    overwritten_items: List[str] = field(default_factory=list)
 
     def to_dict(self) -> Dict:
         return {
@@ -161,6 +167,12 @@ class ImportRecord:
             "imported_count": self.imported_count,
             "batch_name": self.batch_name,
             "items": self.items,
+            "dry_run": self.dry_run,
+            "conflict_summary": self.conflict_summary,
+            "added_items": self.added_items,
+            "skipped_items": self.skipped_items,
+            "conflicted_items": self.conflicted_items,
+            "overwritten_items": self.overwritten_items,
         }
 
     @classmethod
@@ -172,6 +184,12 @@ class ImportRecord:
             imported_count=data["imported_count"],
             batch_name=data["batch_name"],
             items=data.get("items", []),
+            dry_run=data.get("dry_run", False),
+            conflict_summary=data.get("conflict_summary", {}),
+            added_items=data.get("added_items", []),
+            skipped_items=data.get("skipped_items", []),
+            conflicted_items=data.get("conflicted_items", []),
+            overwritten_items=data.get("overwritten_items", []),
         )
 
 
