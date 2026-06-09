@@ -72,3 +72,13 @@ class BatchStorage:
             return None
         latest = max(batches, key=lambda b: b["updated_at"])
         return self.load(latest["batch_id"])
+
+    def find_batches_by_normalized_name(self, normalized_name: str) -> List[BatchHistory]:
+        """查找归一化名称匹配的所有批次"""
+        batches = self.list_batches()
+        result = []
+        for entry in batches:
+            batch = self.load(entry["batch_id"])
+            if batch and batch.normalized_name == normalized_name:
+                result.append(batch)
+        return result

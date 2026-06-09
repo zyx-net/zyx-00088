@@ -122,7 +122,7 @@ def main():
     assert data1["imported_count"] == 3
     assert data1["conflict_count"] == 0
     assert data1["total_delivery_items"] == 3
-    print(f"  ✓ 成功导入 {data1['imported_count']} 个条目")
+    print(f"  [OK] 成功导入 {data1['imported_count']} 个条目")
 
     print("\n[步骤 4] import-list (第2次) - 导入第二批清单（合并）")
     result = run_cmd([
@@ -135,7 +135,7 @@ def main():
     assert data2["imported_count"] == 3
     assert data2["conflict_count"] == 0
     assert data2["total_delivery_items"] == 6
-    print(f"  ✓ 成功导入 {data2['imported_count']} 个条目，总计 {data2['total_delivery_items']} 个")
+    print(f"  [OK] 成功导入 {data2['imported_count']} 个条目，总计 {data2['total_delivery_items']} 个")
 
     print("\n[步骤 5] verify - 校验交付清单与源文件的匹配")
     result = run_cmd([
@@ -145,7 +145,7 @@ def main():
     ], "verify")
     assert result.returncode in [0, 4, 5], f"verify 失败: {result.stderr}"
     verify_data = json.loads(result.stdout)
-    print(f"  ✓ 校验完成 - 正常: {verify_data['ok_count']}, 缺片: {verify_data['missing_count']}, 重复: {verify_data['duplicate_count']}")
+    print(f"  [OK] 校验完成 - 正常: {verify_data['ok_count']}, 缺片: {verify_data['missing_count']}, 重复: {verify_data['duplicate_count']}")
 
     print("\n[步骤 6] plan - 生成修正计划")
     result = run_cmd([
@@ -156,7 +156,7 @@ def main():
     assert result.returncode == 0, f"plan 失败: {result.stderr}"
     plan_data = json.loads(result.stdout)
     assert plan_data["correction_count"] > 0
-    print(f"  ✓ 生成 {plan_data['correction_count']} 个修正项")
+    print(f"  [OK] 生成 {plan_data['correction_count']} 个修正项")
 
     print("\n[步骤 7] apply - 应用修正计划")
     result = run_cmd([
@@ -166,11 +166,11 @@ def main():
     ], "apply")
     assert result.returncode in [0, 3], f"apply 失败: {result.stderr}"
     apply_data = json.loads(result.stdout)
-    print(f"  ✓ 成功应用 {apply_data['applied_count']} 个修正")
+    print(f"  [OK] 成功应用 {apply_data['applied_count']} 个修正")
 
     archive_batch_dir = ARCHIVE_DIR / "acceptance-batch"
     archived_files = list(archive_batch_dir.glob("*.jpg"))
-    print(f"  ✓ 归档目录文件数: {len(archived_files)}")
+    print(f"  [OK] 归档目录文件数: {len(archived_files)}")
     assert len(archived_files) >= apply_data["applied_count"] - apply_data.get("hash_mismatch_count", 0)
 
     print("\n[步骤 8] undo - 撤销已应用的修正")
@@ -181,10 +181,10 @@ def main():
     ], "undo")
     assert result.returncode == 0, f"undo 失败: {result.stderr}"
     undo_data = json.loads(result.stdout)
-    print(f"  ✓ 撤销 {undo_data['undone_count']} 个修正")
+    print(f"  [OK] 撤销 {undo_data['undone_count']} 个修正")
 
     archived_files_after = list(archive_batch_dir.glob("*.jpg"))
-    print(f"  ✓ 撤销后归档目录文件数: {len(archived_files_after)}")
+    print(f"  [OK] 撤销后归档目录文件数: {len(archived_files_after)}")
     assert len(archived_files_after) == len(archived_files) - undo_data["undone_count"]
 
     print("\n[步骤 9] report - 生成报告")
@@ -200,7 +200,7 @@ def main():
     with open(report_path, "r", encoding="utf-8") as f:
         report_data = json.load(f)
 
-    print(f"  ✓ 报告已生成: {report_path}")
+    print(f"  [OK] 报告已生成: {report_path}")
     print(f"    批次: {report_data['summary']['batch_name']}")
     print(f"    总交付项: {report_data['summary']['total_delivery_items']}")
     print(f"    导入次数: {report_data['summary']['total_imports']}")
@@ -228,10 +228,10 @@ def main():
         csv_content = f.read()
     assert "=== 导入记录 ===" in csv_content
     assert "=== 文件映射 ===" in csv_content
-    print(f"  ✓ CSV 报告已生成: {csv_report_path}")
+    print(f"  [OK] CSV 报告已生成: {csv_report_path}")
 
     print("\n" + "=" * 60)
-    print("✓ 验收测试全部通过！")
+    print("[OK] 验收测试全部通过！")
     print("=" * 60)
     print(f"\n测试数据目录: {ACCEPTANCE_DIR}")
     print(f"JSON 报告: {report_path}")
@@ -243,10 +243,10 @@ if __name__ == "__main__":
     try:
         sys.exit(main())
     except AssertionError as e:
-        print(f"\n✗ 验收测试失败: {e}", file=sys.stderr)
+        print(f"\n[FAIL] 验收测试失败: {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
-        print(f"\n✗ 验收测试异常: {e}", file=sys.stderr)
+        print(f"\n[FAIL] 验收测试异常: {e}", file=sys.stderr)
         import traceback
         traceback.print_exc()
         sys.exit(1)

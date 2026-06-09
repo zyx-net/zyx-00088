@@ -1,0 +1,319 @@
+{
+  "batch_id": "c243f8ba",
+  "name": "acceptance-batch",
+  "created_at": "2026-06-09T14:48:59.795002",
+  "updated_at": "2026-06-09T14:49:01.068196",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A\\A_ACCEPT001_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A\\A_ACCEPT001_0001.jpg",
+      "file_name": "A_ACCEPT001_0001.jpg",
+      "size": 54,
+      "hash": "df9875d525730113751f0b714c881ceb3c80cbe57ec2b6521da9c7cd99cf5f43",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "ACCEPT001"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A\\A_ACCEPT001_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A\\A_ACCEPT001_0002.jpg",
+      "file_name": "A_ACCEPT001_0002.jpg",
+      "size": 54,
+      "hash": "ea9c020dca8fb3fa4b591d8a733e2c2a7d76c30d2f90389d5d61df2df841b807",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "ACCEPT001"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A\\A_ACCEPT001_0003.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A\\A_ACCEPT001_0003.jpg",
+      "file_name": "A_ACCEPT001_0003.jpg",
+      "size": 54,
+      "hash": "c7c7e8c13dd06d179e6f2109c31e015806d52351f1b6532cfdd57ffdc3051f95",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "ACCEPT001"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A_duplicate\\A_ACCEPT001_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A_duplicate\\A_ACCEPT001_0001.jpg",
+      "file_name": "A_ACCEPT001_0001.jpg",
+      "size": 54,
+      "hash": "194af2a38fc5ae75deb3f6316e0efef79f6aaf92a6a8b9a83c0a5cca916c41ef",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "ACCEPT001"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_B\\B_ACCEPT001_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_B\\B_ACCEPT001_0001.jpg",
+      "file_name": "B_ACCEPT001_0001.jpg",
+      "size": 54,
+      "hash": "faf1ecb1c0933d048971d1a69d03813931596d11b7e1afb9fea1564a30ab8668",
+      "extension": "jpg",
+      "camera": "B",
+      "detected_batch": "ACCEPT001"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_B\\B_ACCEPT001_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_B\\B_ACCEPT001_0002.jpg",
+      "file_name": "B_ACCEPT001_0002.jpg",
+      "size": 54,
+      "hash": "36dbc70fc98a29d2326fa1d091360f6e76290cb2e55be27d8d505b000feea82a",
+      "extension": "jpg",
+      "camera": "B",
+      "detected_batch": "ACCEPT001"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_B\\B_ACCEPT001_0003.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_B\\B_ACCEPT001_0003.jpg",
+      "file_name": "B_ACCEPT001_0003.jpg",
+      "size": 54,
+      "hash": "6756c22d157a0eef25ad571be66c77e35ce16ad03448d5008f1f95fce157b6fc",
+      "extension": "jpg",
+      "camera": "B",
+      "detected_batch": "ACCEPT001"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_C\\C_ACCEPT001_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_C\\C_ACCEPT001_0001.jpg",
+      "file_name": "C_ACCEPT001_0001.jpg",
+      "size": 54,
+      "hash": "750a510909c6260b81df54eb03f3872b1561850cd1fd273928e2e2dd1b5b0c6f",
+      "extension": "jpg",
+      "camera": "C",
+      "detected_batch": "ACCEPT001"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_C\\C_ACCEPT001_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_C\\C_ACCEPT001_0002.jpg",
+      "file_name": "C_ACCEPT001_0002.jpg",
+      "size": 54,
+      "hash": "d4a023d009f2c3a66ecc38137ee4fc0bd8878a7899b5e95e42d55523acfee7d3",
+      "extension": "jpg",
+      "camera": "C",
+      "detected_batch": "ACCEPT001"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_C\\C_ACCEPT001_0003.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_C\\C_ACCEPT001_0003.jpg",
+      "file_name": "C_ACCEPT001_0003.jpg",
+      "size": 54,
+      "hash": "898aa2964830a0adfbe4fe6d0e7f698094ee1bde7b03299640df69323f85459b",
+      "extension": "jpg",
+      "camera": "C",
+      "detected_batch": "ACCEPT001"
+    }
+  },
+  "delivery_list": {
+    "A_ACCEPT001_0001.jpg": {
+      "target_name": "A_ACCEPT001_0001.jpg",
+      "expected_hash": null,
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "duplicate",
+      "matched_source": null,
+      "actual_hash": null
+    },
+    "A_ACCEPT001_0002.jpg": {
+      "target_name": "A_ACCEPT001_0002.jpg",
+      "expected_hash": null,
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 2,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A\\A_ACCEPT001_0002.jpg",
+      "actual_hash": "ea9c020dca8fb3fa4b591d8a733e2c2a7d76c30d2f90389d5d61df2df841b807"
+    },
+    "B_ACCEPT001_0001.jpg": {
+      "target_name": "B_ACCEPT001_0001.jpg",
+      "expected_hash": null,
+      "expected_camera": "B",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_B\\B_ACCEPT001_0001.jpg",
+      "actual_hash": "faf1ecb1c0933d048971d1a69d03813931596d11b7e1afb9fea1564a30ab8668"
+    },
+    "B_ACCEPT001_0002.jpg": {
+      "target_name": "B_ACCEPT001_0002.jpg",
+      "expected_hash": null,
+      "expected_camera": "B",
+      "expected_size": null,
+      "sequence": 2,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_B\\B_ACCEPT001_0002.jpg",
+      "actual_hash": "36dbc70fc98a29d2326fa1d091360f6e76290cb2e55be27d8d505b000feea82a"
+    },
+    "C_ACCEPT001_0001.jpg": {
+      "target_name": "C_ACCEPT001_0001.jpg",
+      "expected_hash": null,
+      "expected_camera": "C",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_C\\C_ACCEPT001_0001.jpg",
+      "actual_hash": "750a510909c6260b81df54eb03f3872b1561850cd1fd273928e2e2dd1b5b0c6f"
+    },
+    "C_ACCEPT001_0002.jpg": {
+      "target_name": "C_ACCEPT001_0002.jpg",
+      "expected_hash": null,
+      "expected_camera": "C",
+      "expected_size": null,
+      "sequence": 2,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_C\\C_ACCEPT001_0002.jpg",
+      "actual_hash": "d4a023d009f2c3a66ecc38137ee4fc0bd8878a7899b5e95e42d55523acfee7d3"
+    }
+  },
+  "corrections": [
+    {
+      "id": "4bfd2a18-a75d-4381-b7a5-0b6e3b9b9cbd",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A\\A_ACCEPT001_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\archive\\acceptance-batch\\A_ACCEPT001_0001.jpg",
+      "reason": "重复文件: 选择第一个源文件",
+      "applied": false,
+      "applied_at": "2026-06-09T14:49:00.846038",
+      "rolled_back": true
+    },
+    {
+      "id": "aaf538d4-c512-4e65-9703-0b1997b6a1e2",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A_duplicate\\A_ACCEPT001_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\archive\\acceptance-batch\\duplicate_1_A_ACCEPT001_0001.jpg",
+      "reason": "重复文件: 重命名保存第2个副本",
+      "applied": false,
+      "applied_at": "2026-06-09T14:49:00.846923",
+      "rolled_back": true
+    },
+    {
+      "id": "be5982c7-d76f-491e-97c6-39eac783c788",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_A\\A_ACCEPT001_0002.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\archive\\acceptance-batch\\A_ACCEPT001_0002.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": false,
+      "applied_at": "2026-06-09T14:49:00.847668",
+      "rolled_back": true
+    },
+    {
+      "id": "4b68d530-e273-4253-aa9f-2ba7d3e7763d",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_B\\B_ACCEPT001_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\archive\\acceptance-batch\\B_ACCEPT001_0001.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": false,
+      "applied_at": "2026-06-09T14:49:00.848398",
+      "rolled_back": true
+    },
+    {
+      "id": "7e13dcd0-e8f9-4909-b1b1-0b69b6bae7c8",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_B\\B_ACCEPT001_0002.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\archive\\acceptance-batch\\B_ACCEPT001_0002.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": false,
+      "applied_at": "2026-06-09T14:49:00.849514",
+      "rolled_back": true
+    },
+    {
+      "id": "d867a635-a148-4a95-8612-6d54c1cbc282",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_C\\C_ACCEPT001_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\archive\\acceptance-batch\\C_ACCEPT001_0001.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": false,
+      "applied_at": "2026-06-09T14:49:00.850203",
+      "rolled_back": true
+    },
+    {
+      "id": "9b06c060-e5fd-4cd5-a8f3-2501ed3f4858",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards\\card_C\\C_ACCEPT001_0002.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\archive\\acceptance-batch\\C_ACCEPT001_0002.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "applied": false,
+      "applied_at": "2026-06-09T14:49:00.850948",
+      "rolled_back": true
+    }
+  ],
+  "import_records": [
+    {
+      "import_id": "81b5df7c",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\delivery_list\\manifest_batch1.csv",
+      "imported_at": "2026-06-09T14:49:00.006666",
+      "imported_count": 3,
+      "batch_name": "acceptance-batch",
+      "items": [
+        {
+          "target_name": "A_ACCEPT001_0001.jpg",
+          "expected_hash": null,
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        },
+        {
+          "target_name": "A_ACCEPT001_0002.jpg",
+          "expected_hash": null,
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 2,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        },
+        {
+          "target_name": "B_ACCEPT001_0001.jpg",
+          "expected_hash": null,
+          "expected_camera": "B",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ]
+    },
+    {
+      "import_id": "7780da6a",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\delivery_list\\manifest_batch2.csv",
+      "imported_at": "2026-06-09T14:49:00.216725",
+      "imported_count": 3,
+      "batch_name": "acceptance-batch",
+      "items": [
+        {
+          "target_name": "B_ACCEPT001_0002.jpg",
+          "expected_hash": null,
+          "expected_camera": "B",
+          "expected_size": null,
+          "sequence": 2,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        },
+        {
+          "target_name": "C_ACCEPT001_0001.jpg",
+          "expected_hash": null,
+          "expected_camera": "C",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        },
+        {
+          "target_name": "C_ACCEPT001_0002.jpg",
+          "expected_hash": null,
+          "expected_camera": "C",
+          "expected_size": null,
+          "sequence": 2,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ]
+    }
+  ],
+  "conflicts": [],
+  "merge_status": "ok",
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\acceptance_test_data\\sample\\source_cards",
+  "last_scan_at": "2026-06-09T14:48:59.800026",
+  "last_import_at": "2026-06-09T14:49:00.216755",
+  "last_verify_at": "2026-06-09T14:49:00.424038",
+  "normalized_name": "acceptance-batch"
+}

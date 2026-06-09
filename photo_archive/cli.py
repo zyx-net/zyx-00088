@@ -7,6 +7,7 @@ import click
 
 from .config import Config
 from .storage import BatchStorage
+from .models import BatchNameConflictError
 from .commands.init_sample import generate_sample_data
 from .commands.scan import scan_directory
 from .commands.import_list import import_delivery_list
@@ -39,6 +40,7 @@ EXIT_CODES = {
     5: "缺片（清单中存在但源目录中缺失的文件）",
     6: "没有可撤销的操作",
     7: "合并冲突（多清单导入存在冲突，需要人工解决）",
+    8: "批次名冲突（归一化后与现有批次冲突，需要人工处理）",
 }
 
 
@@ -56,6 +58,7 @@ def cli(ctx, config: str):
       5 - 存在缺片
       6 - 没有可撤销的操作
       7 - 合并冲突
+      8 - 批次名冲突
     """
     ctx.ensure_object(dict)
     cfg = _get_config(config)
@@ -102,6 +105,16 @@ def scan(ctx, source_dir: str, batch_id: Optional[str], batch_name: Optional[str
             click.echo(f"  扫描目录: {result['source_dir']}")
             click.echo(f"  发现文件: {result['scanned_count']} 个")
         sys.exit(0)
+    except BatchNameConflictError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] 批次名冲突: {e}", err=True)
+            click.echo("\n现有冲突批次:", err=True)
+            for b in e.conflicting_batches:
+                click.echo(f"  - {b.batch_id}: {b.name}", err=True)
+            click.echo(f"\n归一化后名称: {e.normalized_name}", err=True)
+        sys.exit(8)
     except Exception as e:
         click.echo(f"[FAIL] 扫描失败: {e}", err=True)
         sys.exit(1)
@@ -144,6 +157,16 @@ def import_list(ctx, manifest_path: str, batch_id: Optional[str], batch_name: Op
         if conflict_count > 0:
             sys.exit(7)
         sys.exit(0)
+    except BatchNameConflictError as e:
+        if output_json:
+            _print_json(e.to_dict())
+        else:
+            click.echo(f"[FAIL] 批次名冲突: {e}", err=True)
+            click.echo("\n现有冲突批次:", err=True)
+            for b in e.conflicting_batches:
+                click.echo(f"  - {b.batch_id}: {b.name}", err=True)
+            click.echo(f"\n归一化后名称: {e.normalized_name}", err=True)
+        sys.exit(8)
     except ValueError as e:
         if "重复文件名" in str(e) or "损坏" in str(e):
             click.echo(f"[FAIL] 清单错误: {e}", err=True)

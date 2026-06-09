@@ -621,3 +621,317 @@ def test_conflict_report_json_csv():
     assert "=== 冲突列表 ===" in csv_content
     assert "target_name_conflict" in csv_content
     assert "A_REPTEST_0001.jpg" in csv_content
+
+
+def test_scan_batch_name_case_conflict_via_cli():
+    """测试 scan 命令通过 CLI 检测批次名大小写冲突"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+    create_source_file(source_dir, "A_TEST001_0001.jpg", b"test1")
+
+    result1 = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "Wedding 2024",
+        "--json",
+    ])
+    assert result1.returncode == 0, f"第一次 scan 失败: {result1.stderr}"
+    data1 = json.loads(result1.stdout)
+    batch_id1 = data1["batch_id"]
+    assert data1["batch_name"] == "Wedding 2024"
+
+    result2 = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "wedding  2024",
+        "--json",
+    ])
+    assert result2.returncode == 8, f"应该返回退出码 8，实际: {result2.returncode}, stderr: {result2.stderr}"
+    conflict_data = json.loads(result2.stdout)
+    assert conflict_data["error"] == "batch_name_conflict"
+    assert conflict_data["requested_name"] == "wedding  2024"
+    assert conflict_data["normalized_name"] == "wedding 2024"
+    assert len(conflict_data["conflicting_batches"]) == 1
+    assert conflict_data["conflicting_batches"][0]["batch_id"] == batch_id1
+    assert conflict_data["conflicting_batches"][0]["name"] == "Wedding 2024"
+
+    result3 = run_photo_archive([
+        "-c", str(config_path),
+        "list-batches",
+        "--json",
+    ])
+    assert result3.returncode == 0
+    batches = json.loads(result3.stdout)
+    assert len(batches) == 1
+    assert batches[0]["batch_id"] == batch_id1
+    assert batches[0]["name"] == "Wedding 2024"
+
+
+def test_scan_batch_name_space_conflict_via_cli():
+    """测试 scan 命令通过 CLI 检测批次名连续空格冲突"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+    create_source_file(source_dir, "A_TEST002_0001.jpg", b"test2")
+
+    result1 = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "Summer   Trip",
+        "--json",
+    ])
+    assert result1.returncode == 0, f"第一次 scan 失败: {result1.stderr}"
+    data1 = json.loads(result1.stdout)
+    batch_id1 = data1["batch_id"]
+
+    result2 = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "Summer Trip",
+        "--json",
+    ])
+    assert result2.returncode == 8, f"应该返回退出码 8，实际: {result2.returncode}, stderr: {result2.stderr}"
+    conflict_data = json.loads(result2.stdout)
+    assert conflict_data["normalized_name"] == "summer trip"
+    assert len(conflict_data["conflicting_batches"]) == 1
+    assert conflict_data["conflicting_batches"][0]["batch_id"] == batch_id1
+
+    result3 = run_photo_archive([
+        "-c", str(config_path),
+        "list-batches",
+        "--json",
+    ])
+    assert result3.returncode == 0
+    batches = json.loads(result3.stdout)
+    assert len(batches) == 1
+    assert batches[0]["name"] == "Summer   Trip"
+
+
+def test_scan_exact_name_match_reuses_batch():
+    """测试完全相同的批次名正确复用现有批次"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir1 = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir2 = SAMPLE_DIR / "source_cards" / "card_B"
+    source_dir1.mkdir(parents=True, exist_ok=True)
+    source_dir2.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A", "B"])
+    create_source_file(source_dir1, "A_TEST003_0001.jpg", b"test3a")
+    create_source_file(source_dir2, "B_TEST003_0001.jpg", b"test3b")
+
+    result1 = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir1),
+        "--batch-name", "MyBatch",
+        "--json",
+    ])
+    assert result1.returncode == 0
+    data1 = json.loads(result1.stdout)
+    batch_id1 = data1["batch_id"]
+
+    result2 = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir2),
+        "--batch-name", "MyBatch",
+        "--json",
+    ])
+    assert result2.returncode == 0, f"同名批次应该复用，实际: {result2.returncode}, stderr: {result2.stderr}"
+    data2 = json.loads(result2.stdout)
+    assert data2["batch_id"] == batch_id1
+    assert data2["batch_name"] == "MyBatch"
+    assert data2["scanned_count"] == 1
+
+    result3 = run_photo_archive([
+        "-c", str(config_path),
+        "list-batches",
+        "--json",
+    ])
+    assert result3.returncode == 0
+    batches = json.loads(result3.stdout)
+    assert len(batches) == 1
+    assert batches[0]["file_count"] == 2
+
+
+def test_import_list_batch_name_conflict_via_cli():
+    """测试 import-list 命令通过 CLI 检测批次名冲突"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+    create_source_file(source_dir, "A_TEST004_0001.jpg", b"test4")
+
+    manifest_dir = SAMPLE_DIR / "delivery_list"
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = manifest_dir / "manifest.csv"
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        f.write("target_name,camera,sequence\n")
+        f.write("A_TEST004_0001.jpg,A,1\n")
+
+    run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "Christmas 2024",
+    ])
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "import-list", str(manifest_path),
+        "--batch-name", "christmas  2024",
+        "--json",
+    ])
+    assert result.returncode == 8, f"应该返回退出码 8，实际: {result.returncode}, stderr: {result.stderr}"
+    conflict_data = json.loads(result.stdout)
+    assert conflict_data["error"] == "batch_name_conflict"
+    assert conflict_data["requested_name"] == "christmas  2024"
+    assert conflict_data["normalized_name"] == "christmas 2024"
+
+
+def test_batch_name_conflict_report_audit():
+    """测试批次名冲突在报告和审计中的用户可见结果"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+    create_source_file(source_dir, "A_TEST005_0001.jpg", b"test5")
+
+    manifest_dir = SAMPLE_DIR / "delivery_list"
+    manifest_dir.mkdir(parents=True, exist_ok=True)
+    manifest_path = manifest_dir / "manifest.csv"
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        f.write("target_name,camera,sequence\n")
+        f.write("A_TEST005_0001.jpg,A,1\n")
+
+    result1 = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "New Year 2025",
+        "--json",
+    ])
+    assert result1.returncode == 0
+    data1 = json.loads(result1.stdout)
+    batch_id1 = data1["batch_id"]
+
+    run_photo_archive([
+        "-c", str(config_path),
+        "import-list", str(manifest_path),
+        "--batch-id", batch_id1,
+    ])
+
+    result2 = run_photo_archive([
+        "-c", str(config_path),
+        "report",
+        "--batch-id", batch_id1,
+        "--json",
+    ])
+    assert result2.returncode in [0, 4, 5]
+    report_data = json.loads(result2.stdout)
+    assert report_data["summary"]["batch_name"] == "New Year 2025"
+    assert report_data["summary"]["normalized_name"] == "new year 2025"
+    assert report_data["summary"]["total_delivery_items"] == 1
+
+    result3 = run_photo_archive([
+        "-c", str(config_path),
+        "report",
+        "--batch-id", batch_id1,
+        "--output", str(SAMPLE_DIR / "audit_report.csv"),
+        "--format", "csv",
+    ])
+    assert result3.returncode in [0, 4, 5]
+    with open(SAMPLE_DIR / "audit_report.csv", "r", encoding="utf-8-sig") as f:
+        csv_content = f.read()
+    assert "New Year 2025" in csv_content
+    assert "=== 导入记录 ===" in csv_content
+
+
+def test_batch_name_conflict_text_output():
+    """测试批次名冲突的文本输出可读性"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+    create_source_file(source_dir, "A_TEST006_0001.jpg", b"test6")
+
+    run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "Spring Festival",
+    ])
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "spring   festival",
+    ])
+    assert result.returncode == 8
+    assert "批次名冲突" in result.stderr
+    assert "Spring Festival" in result.stderr
+    assert "归一化后名称" in result.stderr
+    assert "spring festival" in result.stderr
+
+
+def test_batch_id_rename_with_conflict_check():
+    """测试通过 --batch-id 重命名批次时也进行冲突检查"""
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+
+    config_path = SAMPLE_DIR / "config.yaml"
+    source_dir = SAMPLE_DIR / "source_cards" / "card_A"
+    source_dir.mkdir(parents=True, exist_ok=True)
+    create_config(config_path, WORK_DIR, ARCHIVE_DIR, ["A"])
+    create_source_file(source_dir, "A_TEST007_0001.jpg", b"test7a")
+    create_source_file(source_dir, "A_TEST007_0002.jpg", b"test7b")
+
+    result1 = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "BatchAlpha",
+        "--json",
+    ])
+    assert result1.returncode == 0
+    data1 = json.loads(result1.stdout)
+    batch_id1 = data1["batch_id"]
+
+    result2 = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-name", "Batch Beta",
+        "--json",
+    ])
+    assert result2.returncode == 0
+
+    result3 = run_photo_archive([
+        "-c", str(config_path),
+        "scan", str(source_dir),
+        "--batch-id", batch_id1,
+        "--batch-name", "batch  beta",
+        "--json",
+    ])
+    assert result3.returncode == 8, f"重命名时应该检测冲突，实际: {result3.returncode}, stderr: {result3.stderr}"
+    conflict_data = json.loads(result3.stdout)
+    assert conflict_data["error"] == "batch_name_conflict"
+    assert conflict_data["requested_name"] == "batch  beta"
+    assert conflict_data["normalized_name"] == "batch beta"
+
+    result4 = run_photo_archive([
+        "-c", str(config_path),
+        "list-batches",
+        "--json",
+    ])
+    assert result4.returncode == 0
+    batches = json.loads(result4.stdout)
+    batch1 = next(b for b in batches if b["batch_id"] == batch_id1)
+    assert batch1["name"] == "BatchAlpha"
+

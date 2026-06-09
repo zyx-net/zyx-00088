@@ -1,0 +1,50 @@
+﻿=== 批次概览 ===
+batch_id,c243f8ba
+batch_name,acceptance-batch
+normalized_name,acceptance-batch
+created_at,2026-06-09T14:48:59.795002
+updated_at,2026-06-09T14:49:01.068196
+merge_status,ok
+total_delivery_items,6
+total_scanned_files,10
+ok_count,5
+missing_count,0
+duplicate_count,1
+hash_mismatch_count,0
+total_conflicts,0
+unresolved_conflicts_count,0
+total_imports,2
+total_applied_corrections,7
+active_corrections_count,0
+undone_corrections_count,7
+scan_source_dir,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards
+archive_dir,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\archive\acceptance-batch
+hash_strategy,sha256
+
+=== 导入记录 ===
+导入ID,源文件,导入时间,导入数量,批次名
+81b5df7c,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\delivery_list\manifest_batch1.csv,2026-06-09T14:49:00.006666,3,acceptance-batch
+7780da6a,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\delivery_list\manifest_batch2.csv,2026-06-09T14:49:00.216725,3,acceptance-batch
+
+=== 文件映射 ===
+目标文件名,原路径,状态,期望哈希,实际哈希,期望机位,序号
+A_ACCEPT001_0001.jpg,,duplicate,,,A,1
+A_ACCEPT001_0002.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_A\A_ACCEPT001_0002.jpg,ok,,ea9c020dca8fb3fa4b591d8a733e2c2a7d76c30d2f90389d5d61df2df841b807,A,2
+B_ACCEPT001_0001.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_B\B_ACCEPT001_0001.jpg,ok,,faf1ecb1c0933d048971d1a69d03813931596d11b7e1afb9fea1564a30ab8668,B,1
+B_ACCEPT001_0002.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_B\B_ACCEPT001_0002.jpg,ok,,36dbc70fc98a29d2326fa1d091360f6e76290cb2e55be27d8d505b000feea82a,B,2
+C_ACCEPT001_0001.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_C\C_ACCEPT001_0001.jpg,ok,,750a510909c6260b81df54eb03f3872b1561850cd1fd273928e2e2dd1b5b0c6f,C,1
+C_ACCEPT001_0002.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_C\C_ACCEPT001_0002.jpg,ok,,d4a023d009f2c3a66ecc38137ee4fc0bd8878a7899b5e95e42d55523acfee7d3,C,2
+
+=== 重复文件 ===
+目标文件名,原路径,状态
+A_ACCEPT001_0001.jpg,,duplicate
+
+=== 已撤销的修正 ===
+ID,类型,源,目标,原因,执行时间
+4bfd2a18-a75d-4381-b7a5-0b6e3b9b9cbd,copy,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_A\A_ACCEPT001_0001.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\archive\acceptance-batch\A_ACCEPT001_0001.jpg,重复文件: 选择第一个源文件,2026-06-09T14:49:00.846038
+aaf538d4-c512-4e65-9703-0b1997b6a1e2,copy,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_A_duplicate\A_ACCEPT001_0001.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\archive\acceptance-batch\duplicate_1_A_ACCEPT001_0001.jpg,重复文件: 重命名保存第2个副本,2026-06-09T14:49:00.846923
+be5982c7-d76f-491e-97c6-39eac783c788,copy,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_A\A_ACCEPT001_0002.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\archive\acceptance-batch\A_ACCEPT001_0002.jpg,将匹配的源文件复制到归档目录,2026-06-09T14:49:00.847668
+4b68d530-e273-4253-aa9f-2ba7d3e7763d,copy,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_B\B_ACCEPT001_0001.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\archive\acceptance-batch\B_ACCEPT001_0001.jpg,将匹配的源文件复制到归档目录,2026-06-09T14:49:00.848398
+7e13dcd0-e8f9-4909-b1b1-0b69b6bae7c8,copy,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_B\B_ACCEPT001_0002.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\archive\acceptance-batch\B_ACCEPT001_0002.jpg,将匹配的源文件复制到归档目录,2026-06-09T14:49:00.849514
+d867a635-a148-4a95-8612-6d54c1cbc282,copy,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_C\C_ACCEPT001_0001.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\archive\acceptance-batch\C_ACCEPT001_0001.jpg,将匹配的源文件复制到归档目录,2026-06-09T14:49:00.850203
+9b06c060-e5fd-4cd5-a8f3-2501ed3f4858,copy,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\sample\source_cards\card_C\C_ACCEPT001_0002.jpg,D:\workSpace\AI__SPACE\zyx-00088\acceptance_test_data\archive\acceptance-batch\C_ACCEPT001_0002.jpg,将匹配的源文件复制到归档目录,2026-06-09T14:49:00.850948

@@ -279,3 +279,46 @@ class BatchHistory:
             last_verify_at=datetime.fromisoformat(data["last_verify_at"]) if data.get("last_verify_at") else None,
             normalized_name=data.get("normalized_name", ""),
         )
+
+
+class BatchNameConflictError(Exception):
+    """批次名归一化冲突异常
+
+    当新批次名与现有批次归一化后相同但原始名称不同时抛出。
+    例如 "Wedding 2024" 与 "wedding  2024" 归一化后相同。
+    """
+
+    def __init__(
+        self,
+        requested_name: str,
+        normalized_name: str,
+        conflicting_batches: List[BatchHistory],
+        message: Optional[str] = None,
+    ):
+        self.requested_name = requested_name
+        self.normalized_name = normalized_name
+        self.conflicting_batches = conflicting_batches
+        if message is None:
+            existing_names = ", ".join(f'"{b.name}" ({b.batch_id})' for b in conflicting_batches)
+            message = (
+                f'批次名 "{requested_name}" 归一化后为 "{normalized_name}"，'
+                f"与现有批次冲突: {existing_names}"
+            )
+        super().__init__(message)
+
+    def to_dict(self) -> Dict:
+        return {
+            "error": "batch_name_conflict",
+            "requested_name": self.requested_name,
+            "normalized_name": self.normalized_name,
+            "conflicting_batches": [
+                {
+                    "batch_id": b.batch_id,
+                    "name": b.name,
+                    "normalized_name": b.normalized_name,
+                    "created_at": b.created_at.isoformat(),
+                }
+                for b in self.conflicting_batches
+            ],
+            "message": str(self),
+        }
