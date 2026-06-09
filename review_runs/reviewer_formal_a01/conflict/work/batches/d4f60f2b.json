@@ -1,0 +1,228 @@
+{
+  "batch_id": "d4f60f2b",
+  "name": "review-formal-conflict",
+  "created_at": "2026-06-09T17:07:00.765867",
+  "updated_at": "2026-06-09T17:09:08.572853",
+  "scanned_files": {
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\source_cards\\card_A\\A_CONFLICTQ_0001.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\source_cards\\card_A\\A_CONFLICTQ_0001.jpg",
+      "file_name": "A_CONFLICTQ_0001.jpg",
+      "size": 23,
+      "hash": "4e8a8ab6593de4946fb8ba8de6eeb4c114464f1b9d6f9cafce932b6de2a4a7fc",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "CONFLICTQ"
+    },
+    "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\source_cards\\card_A\\A_CONFLICTQ_0002.jpg": {
+      "original_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\source_cards\\card_A\\A_CONFLICTQ_0002.jpg",
+      "file_name": "A_CONFLICTQ_0002.jpg",
+      "size": 23,
+      "hash": "be0be900ee8dceafeb63b634eaae115e51b202bceb76ee7f3ac31d785cb727e4",
+      "extension": "jpg",
+      "camera": "A",
+      "detected_batch": "CONFLICTQ"
+    }
+  },
+  "delivery_list": {
+    "A_CONFLICTQ_0001.jpg": {
+      "target_name": "A_CONFLICTQ_0001.jpg",
+      "expected_hash": "4e8a8ab6593de4946fb8ba8de6eeb4c114464f1b9d6f9cafce932b6de2a4a7fc",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 1,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\source_cards\\card_A\\A_CONFLICTQ_0001.jpg",
+      "actual_hash": "4e8a8ab6593de4946fb8ba8de6eeb4c114464f1b9d6f9cafce932b6de2a4a7fc"
+    },
+    "A_CONFLICTQ_0002.jpg": {
+      "target_name": "A_CONFLICTQ_0002.jpg",
+      "expected_hash": "be0be900ee8dceafeb63b634eaae115e51b202bceb76ee7f3ac31d785cb727e4",
+      "expected_camera": "A",
+      "expected_size": null,
+      "sequence": 2,
+      "status": "ok",
+      "matched_source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\source_cards\\card_A\\A_CONFLICTQ_0002.jpg",
+      "actual_hash": "be0be900ee8dceafeb63b634eaae115e51b202bceb76ee7f3ac31d785cb727e4"
+    }
+  },
+  "corrections": [
+    {
+      "id": "21d5fb6b-ccb6-46ee-a7a4-c490f83d6d0d",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\source_cards\\card_A\\A_CONFLICTQ_0001.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\archive\\review-formal-conflict\\A_CONFLICTQ_0001.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "status": "completed",
+      "applied": true,
+      "applied_at": "2026-06-09T17:09:08.571824",
+      "rolled_back": false,
+      "source_hash": "4e8a8ab6593de4946fb8ba8de6eeb4c114464f1b9d6f9cafce932b6de2a4a7fc",
+      "expected_target_hash": "4e8a8ab6593de4946fb8ba8de6eeb4c114464f1b9d6f9cafce932b6de2a4a7fc",
+      "actual_target_hash": "4e8a8ab6593de4946fb8ba8de6eeb4c114464f1b9d6f9cafce932b6de2a4a7fc",
+      "failure_reason": null,
+      "conflict_details": null,
+      "completed_at": "2026-06-09T17:09:08.571839",
+      "plan_snapshot_id": "3f799659"
+    },
+    {
+      "id": "3352d68a-277e-4911-9e8a-eb0f47c06256",
+      "type": "copy",
+      "source": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\source_cards\\card_A\\A_CONFLICTQ_0002.jpg",
+      "target": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\archive\\review-formal-conflict\\A_CONFLICTQ_0002.jpg",
+      "reason": "将匹配的源文件复制到归档目录",
+      "status": "completed",
+      "applied": true,
+      "applied_at": "2026-06-09T17:09:08.572800",
+      "rolled_back": false,
+      "source_hash": "be0be900ee8dceafeb63b634eaae115e51b202bceb76ee7f3ac31d785cb727e4",
+      "expected_target_hash": "be0be900ee8dceafeb63b634eaae115e51b202bceb76ee7f3ac31d785cb727e4",
+      "actual_target_hash": "be0be900ee8dceafeb63b634eaae115e51b202bceb76ee7f3ac31d785cb727e4",
+      "failure_reason": null,
+      "conflict_details": null,
+      "completed_at": "2026-06-09T17:09:08.572802",
+      "plan_snapshot_id": "3f799659"
+    }
+  ],
+  "import_records": [
+    {
+      "import_id": "742aa0bc",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\delivery_list\\delivery_manifest.csv",
+      "imported_at": "2026-06-09T17:07:14.196711",
+      "imported_count": 2,
+      "batch_name": "review-formal-conflict",
+      "items": [
+        {
+          "target_name": "A_CONFLICTQ_0001.jpg",
+          "expected_hash": "4e8a8ab6593de4946fb8ba8de6eeb4c114464f1b9d6f9cafce932b6de2a4a7fc",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 1,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        },
+        {
+          "target_name": "A_CONFLICTQ_0002.jpg",
+          "expected_hash": "be0be900ee8dceafeb63b634eaae115e51b202bceb76ee7f3ac31d785cb727e4",
+          "expected_camera": "A",
+          "expected_size": null,
+          "sequence": 2,
+          "status": "unknown",
+          "matched_source": null,
+          "actual_hash": null
+        }
+      ],
+      "dry_run": false,
+      "conflict_summary": {
+        "target_name_conflicts": [],
+        "source_file_conflicts": [],
+        "batch_name_conflicts": []
+      },
+      "added_items": [
+        "A_CONFLICTQ_0001.jpg",
+        "A_CONFLICTQ_0002.jpg"
+      ],
+      "skipped_items": [],
+      "conflicted_items": [],
+      "overwritten_items": []
+    }
+  ],
+  "conflicts": [
+    {
+      "conflict_id": "8cf31ece",
+      "conflict_type": "external_modification",
+      "target_name": "A_CONFLICTQ_0001.jpg",
+      "source_file": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\source_cards\\card_A\\A_CONFLICTQ_0001.jpg",
+      "batch_name": "review-formal-conflict",
+      "message": "目标文件已被外部修改: D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\archive\\review-formal-conflict\\A_CONFLICTQ_0001.jpg",
+      "details": {
+        "target_path": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\archive\\review-formal-conflict\\A_CONFLICTQ_0001.jpg",
+        "expected_hash": "4e8a8ab6593de4946fb8ba8de6eeb4c114464f1b9d6f9cafce932b6de2a4a7fc",
+        "actual_hash": "c8ebba842f6db5be0047bdb2df19f33a435c0cfc519d399846f4f4197492e473",
+        "file_size": 31,
+        "modified_at": "2026-06-09T17:08:17.510872"
+      },
+      "resolved": false,
+      "resolved_at": null
+    }
+  ],
+  "apply_records": [
+    {
+      "apply_id": "30ea12d8",
+      "applied_at": "2026-06-09T17:07:44.543300",
+      "applied_count": 2,
+      "skipped_count": 0,
+      "failed_count": 0,
+      "remaining_count": 0,
+      "total_count": 2,
+      "applied_ids": [
+        "21d5fb6b-ccb6-46ee-a7a4-c490f83d6d0d",
+        "3352d68a-277e-4911-9e8a-eb0f47c06256"
+      ],
+      "skipped_ids": [],
+      "failed_ids": [],
+      "limit": null,
+      "target_correction_id": null,
+      "hash_mismatch_count": 0
+    },
+    {
+      "apply_id": "aac5ef8a",
+      "applied_at": "2026-06-09T17:08:27.978576",
+      "applied_count": 1,
+      "skipped_count": 0,
+      "failed_count": 0,
+      "remaining_count": 0,
+      "total_count": 2,
+      "applied_ids": [
+        "3352d68a-277e-4911-9e8a-eb0f47c06256"
+      ],
+      "skipped_ids": [],
+      "failed_ids": [],
+      "limit": null,
+      "target_correction_id": null,
+      "hash_mismatch_count": 0
+    },
+    {
+      "apply_id": "6bdf4bf6",
+      "applied_at": "2026-06-09T17:09:08.572842",
+      "applied_count": 2,
+      "skipped_count": 0,
+      "failed_count": 0,
+      "remaining_count": 0,
+      "total_count": 2,
+      "applied_ids": [
+        "21d5fb6b-ccb6-46ee-a7a4-c490f83d6d0d",
+        "3352d68a-277e-4911-9e8a-eb0f47c06256"
+      ],
+      "skipped_ids": [],
+      "failed_ids": [],
+      "limit": null,
+      "target_correction_id": null,
+      "hash_mismatch_count": 0
+    }
+  ],
+  "undo_records": [],
+  "plan_snapshots": [
+    {
+      "snapshot_id": "3f799659",
+      "name": "formal-conflict-queue",
+      "created_at": "2026-06-09T17:07:30.744543",
+      "correction_ids": [
+        "21d5fb6b-ccb6-46ee-a7a4-c490f83d6d0d",
+        "3352d68a-277e-4911-9e8a-eb0f47c06256"
+      ],
+      "archive_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\archive\\review-formal-conflict",
+      "description": "reviewer-owned-conflict"
+    }
+  ],
+  "merge_status": "ok",
+  "scan_source_dir": "D:\\workSpace\\AI__SPACE\\zyx-00088\\review_runs\\reviewer_formal_a01\\conflict\\source_cards\\card_A",
+  "last_scan_at": "2026-06-09T17:07:00.768159",
+  "last_import_at": "2026-06-09T17:07:14.196743",
+  "last_verify_at": "2026-06-09T17:07:30.614826",
+  "last_apply_at": "2026-06-09T17:09:08.572850",
+  "last_undo_at": null,
+  "last_plan_at": "2026-06-09T17:07:30.744521",
+  "active_snapshot_id": "3f799659",
+  "normalized_name": "review-formal-conflict"
+}

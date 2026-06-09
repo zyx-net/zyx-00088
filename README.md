@@ -8,9 +8,12 @@
 - **扫描目录**：扫描存储卡照片，计算哈希、识别机位信息
 - **导入交付清单**：导入 CSV 格式的交付清单
 - **校验**：检测缺片、重复文件、哈希不一致
-- **生成修正计划**：根据校验结果生成文件复制/重命名计划
-- **应用修正**：执行修正计划，归档文件到交付目录
-- **撤销**：回滚已应用的修正操作
+- **生成修正计划**：根据校验结果生成文件复制/重命名计划，支持保存为命名批次快照
+- **可恢复执行队列**：支持断点续执行，进程重启后可继续未完成的批次
+- **应用修正**：执行修正计划，归档文件到交付目录，自动跳过已完成项，检测外部修改冲突
+- **冲突保护**：目标文件被外部修改或内容不匹配时给出清楚提示，不静默覆盖
+- **撤销**：回滚已应用的修正操作，状态自动正确回退
+- **状态查询**：实时查看批次进度、待执行/已完成/冲突/可撤销数量统计
 - **导出报告**：生成 JSON/CSV 格式的校验报告
 
 ## 快速开始
@@ -34,14 +37,41 @@ photo-archive -c config.yaml import-list ./delivery_list/delivery_manifest.csv
 # 6. 校验
 photo-archive -c config.yaml verify
 
-# 7. 生成修正计划
-photo-archive -c config.yaml plan
+# 7. 生成修正计划（可选：保存为命名批次快照，支持断点续执行
+photo-archive -c config.yaml plan --save "2024-wedding-001" --description "2024年婚礼第一批"
 
-# 8. 应用修正
+# 8. 查看批次状态
+photo-archive -c config.yaml status
+
+# 9. 应用修正（支持断点续执行，自动跳过已完成项）
 photo-archive -c config.yaml apply
 
-# 9. 导出报告
+# 或从指定快照继续执行
+photo-archive -c config.yaml apply --from-snapshot <snapshot_id>
+
+# 10. 导出报告
 photo-archive -c config.yaml report -o report.json --format json
+```
+
+## 可恢复批次工作流
+
+```bash
+# 1. 生成计划并保存批次快照
+photo-archive -c config.yaml plan --save "batch-001"
+
+# 2. 分批执行（限制每次执行2个）
+photo-archive -c config.yaml apply --limit 2
+
+# 3. 查看当前进度
+photo-archive -c config.yaml status
+
+# 4. 进程重启后继续执行剩余项（自动跳过已完成的2个）
+photo-archive -c config.yaml apply
+
+# 5. 遇到冲突时的处理
+# 当目标文件被外部修改时，会给出冲突提示，返回退出码9，不会静默覆盖
+# 可使用 --skip-conflicts 跳过冲突项继续执行其他项
+photo-archive -c config.yaml apply --skip-conflicts
 ```
 
 ## 配置文件 (config.yaml)
@@ -68,6 +98,9 @@ work_dir: ./work
 | **4** | 重复文件名（源目录或清单中存在重复） |
 | **5** | 缺片（清单中存在但源目录中缺失的文件） |
 | **6** | 没有可撤销的操作 |
+| **7** | 合并冲突（多清单导入存在冲突，需要人工解决） |
+| **8** | 批次名冲突（归一化后与现有批次冲突，需要人工处理） |
+| **9** | 执行冲突（目标文件被外部修改或内容不匹配，不会静默覆盖） |
 
 也可以通过命令查看：
 ```bash
@@ -82,12 +115,29 @@ photo-archive help-exit-codes
 | `scan` | 扫描源目录中的照片文件 |
 | `import-list` | 导入交付清单 (CSV 格式) |
 | `verify` | 校验交付清单与源文件的匹配情况 |
-| `plan` | 生成修正计划 |
-| `apply` | 应用修正计划 |
-| `undo` | 撤销已应用的修正 |
+| `plan` | 生成修正计划，支持 `--save <名称>` 保存为命名批次快照 |
+| `apply` | 应用修正计划，支持 `--from-snapshot <快照ID>` 断点续执行 |
+| `status` | 显示批次执行状态和进度统计（待执行、已完成、冲突、可撤销数量） |
+| `undo` | 撤销已应用的修正，状态自动回退 |
 | `report` | 导出校验报告 |
 | `list-batches` | 列出所有批次 |
 | `help-exit-codes` | 显示非零退出码说明 |
+
+### 新增命令选项说明
+
+#### plan 命令
+- `--save <名称>`: 保存为命名批次快照，用于后续断点续执行
+- `--description <描述>`: 批次快照的描述信息
+
+#### apply 命令
+- `--from-snapshot <快照ID>`: 从指定的快照继续执行
+- `--resume/--no-resume`: 是否跳过已完成的项继续执行（默认跳过）
+- `--skip-conflicts`: 跳过存在冲突的项，继续执行其他项
+- `--limit <数量>`: 限制本次应用的修正数量
+
+#### status 命令
+- `--details`: 显示详细的修正项列表
+- `--json`: 输出 JSON 格式的完整状态信息
 
 ## 报告内容
 

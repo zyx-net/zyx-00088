@@ -16,6 +16,7 @@ from .commands.plan import generate_correction_plan
 from .commands.apply import apply_corrections, apply_single_correction
 from .commands.undo import undo_corrections, has_undoable_operations
 from .commands.report import generate_report
+from .commands.status import get_batch_status
 from .commands.utils import get_or_create_batch
 
 
@@ -41,6 +42,7 @@ EXIT_CODES = {
     6: "没有可撤销的操作",
     7: "合并冲突（多清单导入存在冲突，需要人工解决）",
     8: "批次名冲突（归一化后与现有批次冲突，需要人工处理）",
+    9: "执行冲突（目标文件被外部修改或内容不匹配）",
 }
 
 
@@ -266,10 +268,12 @@ def verify(ctx, batch_id: Optional[str], check_hashes: bool, output_json: bool):
 
 @cli.command("plan")
 @click.option("--batch-id", help="批次ID")
+@click.option("--save", "save_as", help="保存为命名批次快照，可用于后续断点续执行")
+@click.option("--description", help="批次快照描述")
 @click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
 @click.pass_context
-def plan(ctx, batch_id: Optional[str], output_json: bool):
-    """生成修正计划"""
+def plan(ctx, batch_id: Optional[str], save_as: Optional[str], description: Optional[str], output_json: bool):
+    """生成修正计划，支持保存为命名批次快照"""
     config = ctx.obj["config"]
     storage = ctx.obj["storage"]
 
@@ -283,7 +287,7 @@ def plan(ctx, batch_id: Optional[str], output_json: bool):
                 click.echo(f"  - [{c.conflict_type.value}] {c.message}", err=True)
             sys.exit(7)
 
-        result = generate_correction_plan(config, storage, batch_id)
+        result = generate_correction_plan(config, storage, batch_id, save_as, description)
         if output_json:
             _print_json(result)
         else:
@@ -291,18 +295,41 @@ def plan(ctx, batch_id: Optional[str], output_json: bool):
             click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
             click.echo(f"  归档目录: {result['archive_dir']}")
             click.echo(f"  总修正项: {result['correction_count']} 个")
-            click.echo(f"  已应用: {result.get('applied_count', 0)} 个")
-            click.echo(f"  待应用: {result.get('pending_count', result['correction_count'])} 个")
+            stats = result.get("statistics", {})
+            click.echo(f"  待执行: {stats.get('pending', 0)} 个")
+            click.echo(f"  已完成: {stats.get('completed', 0)} 个")
+            click.echo(f"  冲突: {stats.get('conflicted', 0)} 个")
+            click.echo(f"  失败: {stats.get('failed', 0)} 个")
+            click.echo(f"  跳过: {stats.get('skipped', 0)} 个")
+            click.echo(f"  已撤销: {stats.get('rolled_back', 0)} 个")
+            click.echo(f"  可撤销: {stats.get('undoable', 0)} 个")
+
+            if result.get("snapshot_id"):
+                click.echo(f"\n[OK] 已保存批次快照: {result['snapshot_name']} ({result['snapshot_id']})")
+                click.echo(f"  包含待执行项: {result['snapshot_correction_count']} 个")
+                click.echo(f"  继续执行: photo-archive -c config.yaml apply --from-snapshot {result['snapshot_id']}")
+
+            click.echo("\n修正明细:")
             for i, corr in enumerate(result["corrections"], 1):
                 status = ""
-                if corr.get("applied") and not corr.get("rolled_back"):
-                    status = " [已应用]"
-                elif corr.get("rolled_back"):
+                if corr.get("status") == "completed":
+                    status = " [已完成]"
+                elif corr.get("status") == "pending":
+                    status = " [待执行]"
+                elif corr.get("status") == "conflicted":
+                    status = " [冲突]"
+                elif corr.get("status") == "failed":
+                    status = " [失败]"
+                elif corr.get("status") == "skipped":
+                    status = " [跳过]"
+                elif corr.get("status") == "rolled_back":
                     status = " [已撤销]"
                 click.echo(f"  {i}. [{corr['type']}] {corr['reason']}{status}")
                 if corr["source"]:
                     click.echo(f"     源: {corr['source']}")
                 click.echo(f"     目标: {corr['target']}")
+                if corr.get("failure_reason"):
+                    click.echo(f"     失败原因: {corr['failure_reason']}")
         sys.exit(0)
     except SystemExit:
         raise
@@ -315,35 +342,43 @@ def plan(ctx, batch_id: Optional[str], output_json: bool):
 @click.option("--batch-id", help="批次ID")
 @click.option("--correction-id", help="指定要应用的单个修正ID")
 @click.option("--limit", type=int, help="限制应用的修正数量")
+@click.option("--from-snapshot", help="从指定的快照继续执行")
+@click.option("--resume/--no-resume", default=True, help="是否跳过已完成的项继续执行（默认跳过）")
+@click.option("--skip-conflicts", is_flag=True, help="跳过存在冲突的项，继续执行其他项")
 @click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
 @click.pass_context
-def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Optional[int], output_json: bool):
-    """应用修正计划"""
+def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Optional[int], from_snapshot: Optional[str], resume: bool, skip_conflicts: bool, output_json: bool):
+    """应用修正计划，支持从快照断点续执行"""
     config = ctx.obj["config"]
     storage = ctx.obj["storage"]
 
     try:
         batch, _ = get_or_create_batch(storage, batch_id)
         unresolved_conflicts = [c for c in batch.conflicts if not c.resolved]
-        if unresolved_conflicts:
-            click.echo(f"[FAIL] 存在 {len(unresolved_conflicts)} 个未解决的冲突，请先解决冲突后再执行此操作", err=True)
+        if unresolved_conflicts and not skip_conflicts:
+            click.echo(f"[FAIL] 存在 {len(unresolved_conflicts)} 个未解决的冲突，请先解决冲突后再执行此操作，或使用 --skip-conflicts 跳过", err=True)
             click.echo("冲突列表:", err=True)
             for c in unresolved_conflicts:
                 click.echo(f"  - [{c.conflict_type.value}] {c.message}", err=True)
             sys.exit(7)
 
-        result = apply_corrections(config, storage, batch_id, correction_id, limit)
+        result = apply_corrections(config, storage, batch_id, correction_id, limit, from_snapshot, resume, skip_conflicts)
         if output_json:
             _print_json(result)
         else:
             click.echo(f"[OK] 修正应用完成")
             click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
             click.echo(f"  批次执行ID: {result.get('apply_id', 'N/A')}")
+            if result.get("from_snapshot"):
+                click.echo(f"  从快照继续: {result['from_snapshot']}")
+            stats = result.get("statistics", {})
             click.echo(f"  总计: {result['total_count']} 个")
             click.echo(f"  本次应用: {result['applied_count']} 个")
-            click.echo(f"  本次跳过: {result['skipped_count']} 个")
+            click.echo(f"  本次跳过(已完成): {result['skipped_count']} 个")
             click.echo(f"  本次失败: {result['failed_count']} 个")
+            click.echo(f"  本次冲突: {result['conflict_count']} 个")
             click.echo(f"  剩余未应用: {result['remaining_count']} 个")
+            click.echo(f"  进度: {stats.get('completed', 0)}/{result['total_count']} ({stats.get('completed', 0) * 100 // max(result['total_count'], 1)}%)")
             if result.get("hash_mismatch_count", 0) > 0:
                 click.echo(f"  哈希不一致: {result['hash_mismatch_count']} 个")
 
@@ -352,18 +387,43 @@ def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Opt
             if result.get('target_correction_id'):
                 click.echo(f"  指定修正ID: {result['target_correction_id']}")
 
+            click.echo("\n应用成功:")
             for corr in result["applied"]:
                 click.echo(f"  [OK] [{corr['type']}] {corr['target']} (ID: {corr['id']})")
-            for corr in result.get("skipped", []):
-                click.echo(f"  [SKIP] [{corr['type']}] {corr['target']} (ID: {corr['id']} - 已应用)")
-            for fail in result["failed"]:
-                click.echo(f"  [FAIL] [{fail['correction_id']}] {fail['error']}")
-            for hm in result.get("hash_mismatches", []):
-                click.echo(f"  [HASH_MISMATCH] {hm['source_path']}")
-                click.echo(f"    期望: {hm['expected_hash']}")
-                click.echo(f"    实际: {hm['actual_hash']}")
+            if result.get("skipped"):
+                click.echo("\n跳过(已完成):")
+                for corr in result["skipped"]:
+                    click.echo(f"  [SKIP] [{corr['type']}] {corr['target']} (ID: {corr['id']} - 已完成)")
+            if result.get("conflicts"):
+                click.echo("\n冲突(未覆盖):")
+                for conf in result["conflicts"]:
+                    click.echo(f"  [CONFLICT] [{conf.get('conflict_type', 'unknown')}] {conf.get('message', '')}")
+                    click.echo(f"    修正ID: {conf['correction_id']}")
+                    if conf.get("details"):
+                        d = conf["details"]
+                        if d.get("expected_hash"):
+                            click.echo(f"    期望哈希: {d['expected_hash']}")
+                        if d.get("actual_hash"):
+                            click.echo(f"    实际哈希: {d['actual_hash']}")
+                        if d.get("modified_at"):
+                            click.echo(f"    修改时间: {d['modified_at']}")
+            if result.get("failed"):
+                click.echo("\n失败:")
+                for fail in result["failed"]:
+                    click.echo(f"  [FAIL] [{fail['correction_id']}] {fail['error']}")
+            if result.get("hash_mismatches"):
+                click.echo("\n源文件哈希不一致:")
+                for hm in result["hash_mismatches"]:
+                    click.echo(f"  [HASH_MISMATCH] {hm['source_path']}")
+                    click.echo(f"    期望: {hm['expected_hash']}")
+                    click.echo(f"    实际: {hm['actual_hash']}")
+
+            if result["remaining_count"] > 0 and not result.get("target_correction_id"):
+                click.echo(f"\n提示: 剩余 {result['remaining_count']} 项未执行，可再次运行 apply 继续")
         if result.get("hash_mismatch_count", 0) > 0:
             sys.exit(3)
+        if result.get("conflict_count", 0) > 0:
+            sys.exit(9)
         if result["failed_count"] > 0:
             sys.exit(1)
         sys.exit(0)
@@ -380,7 +440,7 @@ def apply(ctx, batch_id: Optional[str], correction_id: Optional[str], limit: Opt
 @click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
 @click.pass_context
 def undo(ctx, batch_id: Optional[str], correction_id: Optional[str], output_json: bool):
-    """撤销已应用的修正"""
+    """撤销已应用的修正，状态将正确回退"""
     config = ctx.obj["config"]
     storage = ctx.obj["storage"]
 
@@ -410,6 +470,8 @@ def undo(ctx, batch_id: Optional[str], correction_id: Optional[str], output_json
             click.echo(f"  本次撤销: {result['undone_count']} 个")
             click.echo(f"  失败: {result['failed_count']} 个")
             click.echo(f"  剩余已应用: {result['remaining_applied_after']} 个")
+            stats = result.get("statistics", {})
+            click.echo(f"  当前状态: 待执行={stats.get('pending', 0)}, 已完成={stats.get('completed', 0)}, 已撤销={stats.get('rolled_back', 0)}")
             if result.get('target_correction_id'):
                 click.echo(f"  指定修正ID: {result['target_correction_id']}")
             for corr in result["undone"]:
@@ -427,6 +489,93 @@ def undo(ctx, batch_id: Optional[str], correction_id: Optional[str], output_json
         sys.exit(1)
     except Exception as e:
         click.echo(f"[FAIL] 撤销失败: {e}", err=True)
+        sys.exit(1)
+
+
+@cli.command("status")
+@click.option("--batch-id", help="批次ID")
+@click.option("--json", "output_json", is_flag=True, help="输出JSON格式")
+@click.option("--details", is_flag=True, help="显示详细的修正项列表")
+@click.pass_context
+def status(ctx, batch_id: Optional[str], output_json: bool, details: bool):
+    """显示批次执行状态和进度统计"""
+    config = ctx.obj["config"]
+    storage = ctx.obj["storage"]
+
+    try:
+        result = get_batch_status(config, storage, batch_id)
+        if output_json:
+            _print_json(result)
+        else:
+            click.echo(f"[OK] 批次状态")
+            click.echo(f"  批次: {result['batch_name']} ({result['batch_id']})")
+            click.echo(f"  创建时间: {result['created_at']}")
+            click.echo(f"  更新时间: {result['updated_at']}")
+            click.echo(f"  源文件数: {result['file_count']} 个")
+            click.echo(f"  交付清单项: {result['delivery_count']} 个")
+            click.echo(f"\n执行进度: {result['progress_percent']}% ({result['completed_count']}/{result['total_count']})")
+
+            stats = result.get("statistics", {})
+            click.echo(f"\n状态统计:")
+            click.echo(f"  待执行: {stats.get('pending', 0)} 个")
+            click.echo(f"  已完成: {stats.get('completed', 0)} 个")
+            click.echo(f"  冲突: {stats.get('conflicted', 0)} 个")
+            click.echo(f"  失败: {stats.get('failed', 0)} 个")
+            click.echo(f"  跳过: {stats.get('skipped', 0)} 个")
+            click.echo(f"  已撤销: {stats.get('rolled_back', 0)} 个")
+            click.echo(f"  可撤销: {stats.get('undoable', 0)} 个")
+
+            if result.get("last_plan_at"):
+                click.echo(f"\n最后计划时间: {result['last_plan_at']}")
+            if result.get("last_apply_at"):
+                click.echo(f"最后执行时间: {result['last_apply_at']}")
+            if result.get("last_undo_at"):
+                click.echo(f"最后撤销时间: {result['last_undo_at']}")
+
+            if result.get("snapshots"):
+                click.echo(f"\n保存的批次快照 ({len(result['snapshots'])} 个):")
+                for s in result["snapshots"]:
+                    active_marker = " [当前]" if s.get("is_active") else ""
+                    click.echo(f"  - {s['name']} ({s['snapshot_id']}){active_marker}")
+                    click.echo(f"      创建时间: {s['created_at']}")
+                    click.echo(f"      进度: {s['snapshot_progress']}% ({s['snapshot_completed']}/{s['snapshot_total']})")
+                    click.echo(f"      待执行: {s['snapshot_pending']}, 已完成: {s['snapshot_completed']}, 冲突: {s['snapshot_conflicted']}")
+                    if s.get("description"):
+                        click.echo(f"      描述: {s['description']}")
+
+            if result.get("unresolved_conflicts_count", 0) > 0:
+                click.echo(f"\n[WARN] 存在 {result['unresolved_conflicts_count']} 个未解决的冲突:")
+                for c in result.get("unresolved_conflicts", []):
+                    click.echo(f"  - [{c['conflict_type']}] {c['message']}")
+
+            if details:
+                if result.get("pending"):
+                    click.echo(f"\n待执行项 ({len(result['pending'])}):")
+                    for c in result["pending"]:
+                        click.echo(f"  [{c['id']}] [{c['type']}] {c['target']}")
+                if result.get("completed"):
+                    click.echo(f"\n已完成项 ({len(result['completed'])}):")
+                    for c in result["completed"]:
+                        click.echo(f"  [{c['id']}] [{c['type']}] {c['target']} (完成于 {c.get('completed_at', 'N/A')})")
+                if result.get("conflicted"):
+                    click.echo(f"\n冲突项 ({len(result['conflicted'])}):")
+                    for c in result["conflicted"]:
+                        click.echo(f"  [{c['id']}] [{c['type']}] {c['target']}")
+                        if c.get("failure_reason"):
+                            click.echo(f"    原因: {c['failure_reason']}")
+                if result.get("failed"):
+                    click.echo(f"\n失败项 ({len(result['failed'])}):")
+                    for c in result["failed"]:
+                        click.echo(f"  [{c['id']}] [{c['type']}] {c['target']}")
+                        if c.get("failure_reason"):
+                            click.echo(f"    原因: {c['failure_reason']}")
+
+            click.echo(f"\n继续执行: photo-archive -c config.yaml apply")
+            if result.get("active_snapshot_id"):
+                click.echo(f"从快照继续: photo-archive -c config.yaml apply --from-snapshot {result['active_snapshot_id']}")
+        sys.exit(0)
+    except Exception as e:
+        click.echo(f"[FAIL] 获取状态失败: {e}", err=True)
         sys.exit(1)
 
 

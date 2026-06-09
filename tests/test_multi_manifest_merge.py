@@ -1462,8 +1462,24 @@ def test_stepwise_apply_with_limit_and_restart():
     assert result.returncode == 0
     apply3_data = json.loads(result.stdout)
     assert apply3_data["applied_count"] == 0
-    assert apply3_data["skipped_count"] == 0
+    assert apply3_data["skipped_count"] == 4
     assert apply3_data["remaining_count"] == 0
+    assert "statistics" in apply3_data
+    assert apply3_data["statistics"]["completed"] == 4
+
+    result = run_photo_archive([
+        "-c", str(config_path),
+        "apply",
+        "--batch-id", batch_id,
+        "--no-resume",
+        "--json",
+    ])
+    assert result.returncode == 0
+    apply4_data = json.loads(result.stdout)
+    assert apply4_data["applied_count"] == 4
+    assert apply4_data["skipped_count"] == 0
+    assert apply4_data["remaining_count"] == 0
+    assert apply4_data["statistics"]["completed"] == 4
 
 
 def test_apply_specific_correction_id_with_conflict():
@@ -1836,10 +1852,12 @@ def test_apply_text_output_format():
     ])
     assert result.returncode == 0
     assert "本次应用: 1" in result.stdout
-    assert "本次跳过: 0" in result.stdout
+    assert "本次跳过(已完成): 0" in result.stdout
     assert "本次失败: 0" in result.stdout
+    assert "本次冲突: 0" in result.stdout
     assert "剩余未应用: 1" in result.stdout
     assert "总计: 2" in result.stdout
+    assert "进度:" in result.stdout
     assert "批次执行ID:" in result.stdout
     assert "限制数量: 1" in result.stdout
 

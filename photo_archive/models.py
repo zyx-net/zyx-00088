@@ -11,6 +11,8 @@ class ConflictType(str, Enum):
     TARGET_NAME_CONFLICT = "target_name_conflict"
     SOURCE_FILE_CONFLICT = "source_file_conflict"
     BATCH_NAME_CONFLICT = "batch_name_conflict"
+    EXTERNAL_MODIFICATION = "external_modification"
+    CONTENT_MISMATCH = "content_mismatch"
 
 
 class MergeStatus(str, Enum):
@@ -34,6 +36,15 @@ class FileStatus(str, Enum):
     DUPLICATE = "duplicate"
     HASH_MISMATCH = "hash_mismatch"
     CORRUPTED = "corrupted"
+
+
+class CorrectionStatus(str, Enum):
+    PENDING = "pending"
+    COMPLETED = "completed"
+    CONFLICTED = "conflicted"
+    FAILED = "failed"
+    SKIPPED = "skipped"
+    ROLLED_BACK = "rolled_back"
 
 
 @dataclass
@@ -114,9 +125,17 @@ class CorrectionAction:
     source: str = ""
     target: str = ""
     reason: str = ""
+    status: CorrectionStatus = CorrectionStatus.PENDING
     applied: bool = False
     applied_at: Optional[datetime] = None
     rolled_back: bool = False
+    source_hash: Optional[str] = None
+    expected_target_hash: Optional[str] = None
+    actual_target_hash: Optional[str] = None
+    failure_reason: Optional[str] = None
+    conflict_details: Optional[Dict] = None
+    completed_at: Optional[datetime] = None
+    plan_snapshot_id: Optional[str] = None
 
     def to_dict(self) -> Dict:
         return {
@@ -125,9 +144,17 @@ class CorrectionAction:
             "source": self.source,
             "target": self.target,
             "reason": self.reason,
+            "status": self.status.value,
             "applied": self.applied,
             "applied_at": self.applied_at.isoformat() if self.applied_at else None,
             "rolled_back": self.rolled_back,
+            "source_hash": self.source_hash,
+            "expected_target_hash": self.expected_target_hash,
+            "actual_target_hash": self.actual_target_hash,
+            "failure_reason": self.failure_reason,
+            "conflict_details": self.conflict_details,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "plan_snapshot_id": self.plan_snapshot_id,
         }
 
     @classmethod
@@ -138,9 +165,17 @@ class CorrectionAction:
             source=data["source"],
             target=data["target"],
             reason=data["reason"],
+            status=CorrectionStatus(data.get("status", CorrectionStatus.PENDING.value)),
             applied=data.get("applied", False),
             applied_at=datetime.fromisoformat(data["applied_at"]) if data.get("applied_at") else None,
             rolled_back=data.get("rolled_back", False),
+            source_hash=data.get("source_hash"),
+            expected_target_hash=data.get("expected_target_hash"),
+            actual_target_hash=data.get("actual_target_hash"),
+            failure_reason=data.get("failure_reason"),
+            conflict_details=data.get("conflict_details"),
+            completed_at=datetime.fromisoformat(data["completed_at"]) if data.get("completed_at") else None,
+            plan_snapshot_id=data.get("plan_snapshot_id"),
         )
 
 
@@ -326,6 +361,37 @@ class UndoRecord:
 
 
 @dataclass
+class PlanSnapshot:
+    snapshot_id: str
+    name: str
+    created_at: datetime
+    correction_ids: List[str] = field(default_factory=list)
+    archive_dir: str = ""
+    description: str = ""
+
+    def to_dict(self) -> Dict:
+        return {
+            "snapshot_id": self.snapshot_id,
+            "name": self.name,
+            "created_at": self.created_at.isoformat(),
+            "correction_ids": self.correction_ids,
+            "archive_dir": self.archive_dir,
+            "description": self.description,
+        }
+
+    @classmethod
+    def from_dict(cls, data: Dict) -> "PlanSnapshot":
+        return cls(
+            snapshot_id=data["snapshot_id"],
+            name=data["name"],
+            created_at=datetime.fromisoformat(data["created_at"]),
+            correction_ids=data.get("correction_ids", []),
+            archive_dir=data.get("archive_dir", ""),
+            description=data.get("description", ""),
+        )
+
+
+@dataclass
 class BatchHistory:
     batch_id: str
     name: str
@@ -338,6 +404,7 @@ class BatchHistory:
     conflicts: List[Conflict] = field(default_factory=list)
     apply_records: List[ApplyRecord] = field(default_factory=list)
     undo_records: List[UndoRecord] = field(default_factory=list)
+    plan_snapshots: List[PlanSnapshot] = field(default_factory=list)
     merge_status: MergeStatus = MergeStatus.PENDING
     scan_source_dir: Optional[str] = None
     last_scan_at: Optional[datetime] = None
@@ -345,6 +412,8 @@ class BatchHistory:
     last_verify_at: Optional[datetime] = None
     last_apply_at: Optional[datetime] = None
     last_undo_at: Optional[datetime] = None
+    last_plan_at: Optional[datetime] = None
+    active_snapshot_id: Optional[str] = None
     normalized_name: str = ""
 
     def __post_init__(self):
@@ -354,6 +423,42 @@ class BatchHistory:
     @staticmethod
     def _normalize_name(name: str) -> str:
         return " ".join(name.strip().lower().split())
+
+    def get_statistics(self) -> Dict:
+        pending = 0
+        completed = 0
+        conflicted = 0
+        failed = 0
+        skipped = 0
+        rolled_back = 0
+        undoable = 0
+
+        for c in self.corrections:
+            if c.status == CorrectionStatus.PENDING and not c.rolled_back:
+                pending += 1
+            elif c.status == CorrectionStatus.COMPLETED and not c.rolled_back:
+                completed += 1
+                if not c.rolled_back:
+                    undoable += 1
+            elif c.status == CorrectionStatus.CONFLICTED:
+                conflicted += 1
+            elif c.status == CorrectionStatus.FAILED:
+                failed += 1
+            elif c.status == CorrectionStatus.SKIPPED:
+                skipped += 1
+            elif c.rolled_back or c.status == CorrectionStatus.ROLLED_BACK:
+                rolled_back += 1
+
+        return {
+            "total": len(self.corrections),
+            "pending": pending,
+            "completed": completed,
+            "conflicted": conflicted,
+            "failed": failed,
+            "skipped": skipped,
+            "rolled_back": rolled_back,
+            "undoable": undoable,
+        }
 
     def to_dict(self) -> Dict:
         return {
@@ -368,6 +473,7 @@ class BatchHistory:
             "conflicts": [c.to_dict() for c in self.conflicts],
             "apply_records": [r.to_dict() for r in self.apply_records],
             "undo_records": [r.to_dict() for r in self.undo_records],
+            "plan_snapshots": [s.to_dict() for s in self.plan_snapshots],
             "merge_status": self.merge_status.value,
             "scan_source_dir": self.scan_source_dir,
             "last_scan_at": self.last_scan_at.isoformat() if self.last_scan_at else None,
@@ -375,6 +481,8 @@ class BatchHistory:
             "last_verify_at": self.last_verify_at.isoformat() if self.last_verify_at else None,
             "last_apply_at": self.last_apply_at.isoformat() if self.last_apply_at else None,
             "last_undo_at": self.last_undo_at.isoformat() if self.last_undo_at else None,
+            "last_plan_at": self.last_plan_at.isoformat() if self.last_plan_at else None,
+            "active_snapshot_id": self.active_snapshot_id,
             "normalized_name": self.normalized_name,
         }
 
@@ -392,6 +500,7 @@ class BatchHistory:
             conflicts=[Conflict.from_dict(c) for c in data.get("conflicts", [])],
             apply_records=[ApplyRecord.from_dict(r) for r in data.get("apply_records", [])],
             undo_records=[UndoRecord.from_dict(r) for r in data.get("undo_records", [])],
+            plan_snapshots=[PlanSnapshot.from_dict(s) for s in data.get("plan_snapshots", [])],
             merge_status=MergeStatus(data.get("merge_status", MergeStatus.PENDING.value)),
             scan_source_dir=data.get("scan_source_dir"),
             last_scan_at=datetime.fromisoformat(data["last_scan_at"]) if data.get("last_scan_at") else None,
@@ -399,6 +508,8 @@ class BatchHistory:
             last_verify_at=datetime.fromisoformat(data["last_verify_at"]) if data.get("last_verify_at") else None,
             last_apply_at=datetime.fromisoformat(data["last_apply_at"]) if data.get("last_apply_at") else None,
             last_undo_at=datetime.fromisoformat(data["last_undo_at"]) if data.get("last_undo_at") else None,
+            last_plan_at=datetime.fromisoformat(data["last_plan_at"]) if data.get("last_plan_at") else None,
+            active_snapshot_id=data.get("active_snapshot_id"),
             normalized_name=data.get("normalized_name", ""),
         )
 

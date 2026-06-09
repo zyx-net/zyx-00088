@@ -5,7 +5,13 @@ import shutil
 import uuid
 
 from ..config import Config
-from ..models import BatchHistory, CorrectionAction, CorrectionType, UndoRecord
+from ..models import (
+    BatchHistory,
+    CorrectionAction,
+    CorrectionStatus,
+    CorrectionType,
+    UndoRecord,
+)
 from ..storage import BatchStorage
 from .utils import get_or_create_batch
 
@@ -18,7 +24,7 @@ def undo_corrections(
 ) -> Dict:
     batch, _ = get_or_create_batch(storage, batch_id)
 
-    applied = [c for c in batch.corrections if c.applied and not c.rolled_back]
+    applied = [c for c in batch.corrections if c.status == CorrectionStatus.COMPLETED and not c.rolled_back]
     total_applied_before = len(applied)
 
     if not applied:
@@ -57,6 +63,8 @@ def undo_corrections(
 
             correction.rolled_back = True
             correction.applied = False
+            correction.status = CorrectionStatus.ROLLED_BACK
+            correction.actual_target_hash = None
             undone.append(correction)
             undone_ids.append(correction.id)
 
@@ -67,7 +75,7 @@ def undo_corrections(
             })
             failed_ids.append(correction.id)
 
-    remaining_applied = [c for c in batch.corrections if c.applied and not c.rolled_back]
+    remaining_applied = [c for c in batch.corrections if c.status == CorrectionStatus.COMPLETED and not c.rolled_back]
     remaining_applied_after = len(remaining_applied)
 
     undo_record = UndoRecord(
@@ -87,6 +95,8 @@ def undo_corrections(
 
     storage.save(batch)
 
+    stats = batch.get_statistics()
+
     return {
         "batch_id": batch.batch_id,
         "batch_name": batch.name,
@@ -100,8 +110,9 @@ def undo_corrections(
         "undone_ids": undone_ids,
         "failed_ids": failed_ids,
         "target_correction_id": correction_id,
+        "statistics": stats,
     }
 
 
 def has_undoable_operations(batch: BatchHistory) -> bool:
-    return any(c.applied and not c.rolled_back for c in batch.corrections)
+    return any(c.status == CorrectionStatus.COMPLETED and not c.rolled_back for c in batch.corrections)
